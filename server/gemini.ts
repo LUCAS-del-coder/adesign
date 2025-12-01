@@ -90,27 +90,35 @@ export async function analyzeImageWithGemini(
                 text: `Analyze this advertisement image in detail and provide a comprehensive description in ENGLISH, including:
 1. Overall visual style (color scheme, layout, design style)
 2. Main elements and objects
-3. Text content and placement - CRITICAL: For text translation, follow these guidelines:
+3. Text content and placement - CRITICAL: For text translation, follow these STRICT guidelines:
+   - MANDATORY: ALL text in the image MUST be identified and translated to English
    - If text is already in English: Preserve it EXACTLY as written, or suggest minor improvements if needed
-   - If text is in another language: Translate to professional, native English that maintains:
-     * The exact meaning and intent
-     * The persuasive tone and emotional impact
-     * The marketing message and call-to-action strength
-     * Natural, fluent English that sounds like professional copywriting
-   - Provide the translated text in quotes, and note the original language
-   - Ensure translations are high-quality, natural, and compelling
+   - If text is in another language (Chinese, Japanese, Korean, etc.): 
+     * Translate EVERY SINGLE CHARACTER to professional, native English
+     * Maintain the exact meaning and intent
+     * Preserve the persuasive tone and emotional impact
+     * Keep the marketing message and call-to-action strength
+     * Use natural, fluent English that sounds like professional copywriting
+     * NO non-English characters should remain in the translation
+   - For each text element, provide:
+     * Original text (if not English) in quotes
+     * Professional English translation in quotes
+     * Note the original language
+   - Ensure ALL translations are high-quality, natural, and compelling
+   - If you see ANY non-English text, you MUST translate it - do not skip any text elements
 4. Composition and layout structure
 5. Color palette and combinations
 6. Atmosphere and emotional tone
 7. Target audience and marketing message
 
-IMPORTANT REQUIREMENTS:
+CRITICAL REQUIREMENTS FOR TEXT TRANSLATION:
+- MANDATORY: Identify and translate EVERY text element in the image
+- If the image contains Chinese, Japanese, Korean, or any other non-English text, you MUST translate ALL of it
+- Use professional translation services quality - natural, fluent, and compelling
+- Preserve the original's impact and quality
 - Write the ENTIRE description in English
-- For text translation: Use professional translation that preserves the original's impact and quality
-- If original text is high-quality English, preserve it or improve it slightly
-- Maintain the advertising impact and persuasive language
-- Focus on creating high-quality, native English marketing copy that matches or exceeds the original quality
-- Be precise with translations - don't lose meaning or impact in translation
+- In your description, explicitly list all text elements with their English translations
+- Do NOT leave any non-English text untranslated
 
 Provide a detailed but concise description suitable for generating similar advertisement images with professional English text that maintains or improves upon the original text quality.`,
               },
@@ -544,17 +552,48 @@ export async function generateAdVariants(
   
   const generatePromises = Array.from({ length: count }, async (_, i) => {
     try {
-      // 為每個變體定義不同的變化方向
-      const variationInstructions = [
-        `Variation 1: Create a SIGNIFICANTLY different composition - change the camera angle (try a different perspective like top-down, side view, or close-up), rearrange main elements to different positions, modify the layout structure (switch from horizontal to vertical arrangement or vice versa), and experiment with different color saturation levels while keeping the same color palette.`,
-        `Variation 2: Make SUBSTANTIAL visual changes - alter the background style (change from solid to gradient, or add texture/pattern), reposition all text elements to different areas, change the visual hierarchy by making different elements prominent, adjust lighting and shadows dramatically, and vary the spacing between elements significantly.`,
-        `Variation 3: Create a DISTINCT variation - change the overall mood and atmosphere (make it more energetic, calm, or dramatic), use different visual effects or filters, rearrange the composition to focus on different elements, modify the color temperature (warmer or cooler tones), and change the text placement and sizing to create a fresh look.`,
+      // 為每個變體定義不同的相似度要求（80%, 60%, 40%）
+      const similarityLevels = [
+        {
+          similarity: 80,
+          instruction: `Variation 1 (80% Similarity): Maintain HIGH similarity to the original image. Keep approximately 80% of the visual elements, composition, colors, and layout structure identical or very similar to the original. Make MINIMAL changes:
+- Keep the same overall composition and layout structure (80% identical)
+- Maintain the same color palette with only minor adjustments (80% same colors)
+- Keep the same camera angle and perspective (80% same viewpoint)
+- Preserve the same background style and atmosphere (80% same feel)
+- Keep text elements in similar positions (80% same placement)
+- Make only subtle changes: slight color adjustments, minor element repositioning, small text size variations
+- The result should look very similar to the original, like a refined version with minor improvements`,
+        },
+        {
+          similarity: 60,
+          instruction: `Variation 2 (60% Similarity): Create a MODERATE variation with balanced changes. Keep approximately 60% of the visual elements similar to the original, while making noticeable but not drastic changes:
+- Modify the composition and layout structure moderately (60% similar layout)
+- Adjust the color palette with more noticeable changes (60% same colors, 40% new/adjusted)
+- Change the camera angle or perspective to a different but related view (60% same perspective)
+- Alter the background style more significantly (60% same background feel)
+- Reposition text elements to different but logical areas (60% same text placement concept)
+- Make moderate changes: different color saturation, varied element sizes, adjusted spacing, different text positioning
+- The result should be recognizably related to the original but with clear visual differences`,
+        },
+        {
+          similarity: 40,
+          instruction: `Variation 3 (40% Similarity): Create a SIGNIFICANT variation with substantial changes. Keep approximately 40% of the core visual elements, while making major creative changes:
+- Significantly modify the composition and layout structure (40% similar layout, 60% new arrangement)
+- Transform the color palette with major changes (40% same colors, 60% new/adjusted colors)
+- Change the camera angle or perspective dramatically (40% same perspective, 60% new viewpoint)
+- Completely alter the background style and atmosphere (40% same feel, 60% new atmosphere)
+- Reposition text elements to entirely different areas (40% same text concept, 60% new placement)
+- Make substantial changes: different visual style, dramatic color shifts, major element repositioning, completely different text layout, new composition focus
+- The result should maintain the core marketing message and brand identity but look distinctly different from the original`,
+        },
       ];
       
-      const variationPrompt = variationInstructions[i] || `Variation ${i + 1}: Create a DISTINCTLY different version with significant changes to composition, element positioning, color treatment, and visual style while maintaining the core theme.`;
+      const similarityConfig = similarityLevels[i] || similarityLevels[2];
+      const variationPrompt = similarityConfig.instruction;
 
       // 構建生成提示詞（使用英文，不包含 Logo，Logo 將在後期疊加）
-      const prompt = `Create a high-quality advertisement image based on the following description:\n\n${analysisPrompt}\n\n${variationPrompt}\n\nIMPORTANT: This variation should be VISIBLY DIFFERENT from the original while maintaining the same marketing message and brand identity. Make creative and substantial changes to create a unique variation.\n\nCRITICAL REQUIREMENTS FOR TEXT:\n- ALL text in the image MUST be in ENGLISH ONLY\n- Use professional, native English marketing copy with EXCELLENT quality\n- Translate with precision, maintaining the original meaning, tone, and persuasive impact\n- Use natural, fluent English that sounds like it was written by a native English copywriter\n- Ensure all marketing messages are clear, compelling, and professionally written\n- NO Chinese, Japanese, or any other non-English characters\n- Text should be clear, legible, high-quality, and properly formatted\n- Maintain the advertising impact and persuasive tone of the original\n- Use proper English grammar, spelling, and punctuation\n- If the original text is already in English, preserve it exactly or improve it slightly\n\nFocus on creating a professional, polished advertisement with EXCEPTIONAL English text quality that matches or exceeds the original's impact.`;
+      const prompt = `Create a high-quality advertisement image based on the following description:\n\n${analysisPrompt}\n\n${variationPrompt}\n\nCRITICAL REQUIREMENTS FOR TEXT TRANSLATION (MANDATORY - NO EXCEPTIONS):\n- MANDATORY: ALL text in the generated image MUST be in ENGLISH ONLY - NO Chinese, Japanese, Korean, or any other non-English characters\n- MANDATORY: Translate EVERY text element from the original description to professional, native English\n- MANDATORY: If the original description mentions any non-English text, you MUST translate it to English in the generated image\n- Use professional, native English marketing copy with EXCEPTIONAL quality\n- Translate with precision, maintaining the original meaning, tone, and persuasive impact\n- Use natural, fluent English that sounds like it was written by a native English copywriter\n- Ensure all marketing messages are clear, compelling, and professionally written\n- Text should be clear, legible, high-quality, and properly formatted\n- Maintain the advertising impact and persuasive tone of the original\n- Use proper English grammar, spelling, and punctuation\n- If the original text is already in English, preserve it exactly or improve it slightly\n- DO NOT generate any non-English characters - if you see Chinese, Japanese, or any other non-English text in the description, translate ALL of it to English\n- Double-check: Before finalizing the image, ensure NO non-English characters exist in any text elements\n\nFocus on creating a professional, polished advertisement with EXCEPTIONAL English text quality that matches or exceeds the original's impact. The similarity level should be approximately ${similarityConfig.similarity}% as specified above.`;
 
       console.log(`[Gemini] 開始生成變體 ${i + 1}/${count}`);
       const imageBuffer = await generateImageWithGemini(
