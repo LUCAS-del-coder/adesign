@@ -165,7 +165,18 @@ Provide a detailed but concise description suitable for generating similar adver
       // 如果是配額超限錯誤 (429)，嘗試重試
       if (error.response?.status === 429 && attempt < maxRetries) {
         const retryDelay = extractRetryDelay(error);
-        console.log(`[Gemini] 配額超限，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        // 檢查是否為免費層配額已用盡（limit: 0）
+        const errorData = error.response?.data?.error;
+        const errorMsg = errorData?.message || "";
+        const isFreeTierExhausted = errorMsg.includes("limit: 0");
+        
+        if (isFreeTierExhausted) {
+          console.warn(`[Gemini] 免費層配額已用盡（limit: 0）。建議升級到付費計劃或等待配額重置。`);
+          console.log(`[Gemini] 等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        } else {
+          console.log(`[Gemini] 配額超限，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        }
+        
         await sleep(retryDelay);
         continue; // 重試
       }
@@ -186,8 +197,16 @@ Provide a detailed but concise description suitable for generating similar adver
       if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
         errorMessage += ": 請求超時，請稍後再試";
       } else if (error.response?.status === 429) {
-        const retryDelay = extractRetryDelay(error);
-        errorMessage += `: API 請求配額已用盡。請等待 ${retryDelay} 秒後再試，或升級您的 Gemini API 計劃`;
+        const errorData = error.response?.data?.error;
+        const errorMsg = errorData?.message || "";
+        const isFreeTierExhausted = errorMsg.includes("limit: 0");
+        
+        if (isFreeTierExhausted) {
+          errorMessage += ": 免費層配額已用盡（limit: 0）。請升級到付費計劃以繼續使用，或等待配額重置。查看配額：https://ai.dev/usage?tab=rate-limit";
+        } else {
+          const retryDelay = extractRetryDelay(error);
+          errorMessage += `: API 請求配額已用盡。請等待 ${retryDelay} 秒後再試，或升級您的 Gemini API 計劃`;
+        }
       } else if (error.response?.data?.error?.message) {
         errorMessage += ": " + error.response.data.error.message;
       } else {
