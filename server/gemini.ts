@@ -394,9 +394,15 @@ export async function generateImageWithGemini(
     console.log("[Gemini] 請求體結構:", JSON.stringify(requestBodyForLog, null, 2));
 
     // ✅ 修復 4: API 錯誤處理完善
-    // 使用穩定的 Gemini 2.5 Flash Image 模型
-    // gemini-2.5-flash-image-exp-001 在 v1beta 中不可用，使用穩定版本
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent`;
+    // 支持通過環境變量配置模型名稱，默認使用 gemini-2.5-flash-image
+    // 可以嘗試的模型：
+    // - gemini-2.5-flash-image (穩定版本)
+    // - gemini-3-pro-image (如果可用)
+    // - gemini-3.0-pro-image (如果可用)
+    // - gemini-2.5-flash-image-exp-001 (實驗版本，可能不可用)
+    const modelName = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+    console.log(`[Gemini] 使用模型: ${modelName}`);
     console.log("[Gemini] 調用 API:", apiUrl);
 
     const response = await axios.post(
