@@ -77,17 +77,24 @@ export async function storagePut(
 
   try {
     await client.send(command);
+    console.log(`[R2] Upload successful, key: ${key}`);
 
     // Return public URL
-    // If custom public URL is configured, use it; otherwise use R2.dev URL
+    // If custom public URL is configured, use it; otherwise generate a signed URL
     let url: string;
     if (config.publicUrl) {
+      // Use custom public URL
       url = `${config.publicUrl.replace(/\/+$/, "")}/${key}`;
+      console.log(`[R2] Using custom public URL: ${url}`);
     } else {
-      // Use R2.dev public URL format: https://pub-<hash>.r2.dev/<key>
-      // Note: This requires the bucket to have a public domain configured
-      // For production, you should set up a custom domain via Cloudflare
-      url = `https://${config.bucket}.r2.dev/${key}`;
+      // Generate a signed URL for accessing the file (valid for 1 year)
+      // This ensures the file is accessible even without public access configured
+      const getCommand = new GetObjectCommand({
+        Bucket: config.bucket,
+        Key: key,
+      });
+      url = await getSignedUrl(client, getCommand, { expiresIn: 31536000 }); // 1 year
+      console.log(`[R2] Generated signed URL (expires in 1 year)`);
     }
 
     return { key, url };

@@ -46,22 +46,28 @@ export const appRouter = router({
         country: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const buffer = Buffer.from(input.base64Data, 'base64');
-        const fileKey = `${ctx.user.id}/original/${nanoid()}-${input.filename}`;
-        console.log('[Upload] Uploading to S3, fileKey:', fileKey);
-        const { url } = await storagePut(fileKey, buffer, input.mimeType);
-        console.log('[Upload] S3 returned URL:', url);
-        
-        await createOriginalAd({
-          userId: ctx.user.id,
-          fileKey,
-          fileUrl: url,
-          filename: input.filename,
-          mimeType: input.mimeType,
-          country: input.country,
-        });
-        
-        return { success: true, url };
+        try {
+          const buffer = Buffer.from(input.base64Data, 'base64');
+          const fileKey = `${ctx.user.id}/original/${nanoid()}-${input.filename}`;
+          console.log('[Upload] Uploading to R2, fileKey:', fileKey, 'size:', buffer.length, 'bytes');
+          const { url } = await storagePut(fileKey, buffer, input.mimeType);
+          console.log('[Upload] R2 returned URL:', url);
+          
+          await createOriginalAd({
+            userId: ctx.user.id,
+            fileKey,
+            fileUrl: url,
+            filename: input.filename,
+            mimeType: input.mimeType,
+            country: input.country,
+          });
+          
+          console.log('[Upload] Successfully saved to database');
+          return { success: true, url };
+        } catch (error) {
+          console.error('[Upload] Error:', error);
+          throw new Error(`上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+        }
       }),
     
     // 獲取用戶的所有原始廣告圖
@@ -226,56 +232,73 @@ export const appRouter = router({
         prompt: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-          throw new Error("GEMINI_API_KEY 未設定");
+        try {
+          const apiKey = process.env.GEMINI_API_KEY;
+          if (!apiKey) {
+            throw new Error("GEMINI_API_KEY 未設定");
+          }
+
+          console.log('[Generate] Starting variant generation for originalAdId:', input.originalAdId);
+
+          // 獲取原始廣告圖
+          const originalAd = await getOriginalAdById(input.originalAdId);
+          if (!originalAd) {
+            throw new Error("找不到原始廣告圖");
+          }
+
+          console.log('[Generate] Original ad found, fileUrl:', originalAd.fileUrl);
+
+          // 獲取用戶啟用的 Logo
+          const enabledLogos = await getEnabledLogosByUserId(ctx.user.id);
+          const logoUrls = enabledLogos.map((logo: { fileUrl: string }) => logo.fileUrl);
+          console.log('[Generate] Enabled logos:', logoUrls.length);
+
+          // 生成 3 張變體
+          console.log('[Generate] Starting to generate variants...');
+          const variantBuffers = await generateAdVariants(
+            originalAd.fileUrl,
+            input.prompt,
+            logoUrls,
+            apiKey,
+            3
+          );
+          console.log('[Generate] Generated', variantBuffers.length, 'variants');
+
+          // 為生成的圖片疊加 Logo（如果有啟用的 Logo）
+          const processedBuffers: Buffer[] = [];
+          for (let i = 0; i < variantBuffers.length; i++) {
+            console.log(`[Generate] Processing variant ${i + 1}/${variantBuffers.length} with logos`);
+            const processedBuffer = await overlayLogos(variantBuffers[i], logoUrls);
+            processedBuffers.push(processedBuffer);
+          }
+
+          // 上傳處理後的圖片到 R2
+          const generatedUrls: string[] = [];
+          for (let i = 0; i < processedBuffers.length; i++) {
+            const fileKey = `${ctx.user.id}/generated/${nanoid()}-variant-${i + 1}.png`;
+            console.log(`[Generate] Uploading variant ${i + 1} to R2, fileKey:`, fileKey);
+            const { url } = await storagePut(fileKey, processedBuffers[i], "image/png");
+            console.log(`[Generate] Variant ${i + 1} uploaded, URL:`, url);
+            
+            // 保存到資料庫
+            await createGeneratedAd({
+              userId: ctx.user.id,
+              originalAdId: input.originalAdId,
+              fileKey,
+              fileUrl: url,
+              prompt: input.prompt,
+            });
+            console.log(`[Generate] Variant ${i + 1} saved to database`);
+
+            generatedUrls.push(url);
+          }
+
+          console.log('[Generate] Successfully generated', generatedUrls.length, 'variants');
+          return { success: true, generatedUrls };
+        } catch (error) {
+          console.error('[Generate] Error:', error);
+          throw new Error(`生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
         }
-
-        // 獲取原始廣告圖
-        const originalAd = await getOriginalAdById(input.originalAdId);
-        if (!originalAd) {
-          throw new Error("找不到原始廣告圖");
-        }
-
-        // 獲取用戶啟用的 Logo
-        const enabledLogos = await getEnabledLogosByUserId(ctx.user.id);
-        const logoUrls = enabledLogos.map((logo: { fileUrl: string }) => logo.fileUrl);
-
-        // 生成 3 張變體
-        const variantBuffers = await generateAdVariants(
-          originalAd.fileUrl,
-          input.prompt,
-          logoUrls,
-          apiKey,
-          3
-        );
-
-        // 為生成的圖片疊加 Logo（如果有啟用的 Logo）
-        const processedBuffers: Buffer[] = [];
-        for (const buffer of variantBuffers) {
-          const processedBuffer = await overlayLogos(buffer, logoUrls);
-          processedBuffers.push(processedBuffer);
-        }
-
-        // 上傳處理後的圖片到 S3
-        const generatedUrls: string[] = [];
-        for (let i = 0; i < processedBuffers.length; i++) {
-          const fileKey = `${ctx.user.id}/generated/${nanoid()}-variant-${i + 1}.png`;
-          const { url } = await storagePut(fileKey, processedBuffers[i], "image/png");
-          
-          // 保存到資料庫
-          await createGeneratedAd({
-            userId: ctx.user.id,
-            originalAdId: input.originalAdId,
-            fileKey,
-            fileUrl: url,
-            prompt: input.prompt,
-          });
-
-          generatedUrls.push(url);
-        }
-
-        return { success: true, generatedUrls };
       }),
   }),
 });
