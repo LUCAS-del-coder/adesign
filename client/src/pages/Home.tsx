@@ -35,6 +35,7 @@ export default function Home() {
   const [elementName, setElementName] = useState("");
   const [elementDescription, setElementDescription] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number>(-1);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [showAllAds, setShowAllAds] = useState(false);
   const [countryFilter, setCountryFilter] = useState<string>("all");
