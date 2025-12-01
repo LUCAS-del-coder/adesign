@@ -394,8 +394,7 @@ export async function generateImageWithGemini(
     console.log("[Gemini] 請求體結構:", JSON.stringify(requestBodyForLog, null, 2));
 
     // ✅ 修復 4: API 錯誤處理完善
-    // 使用傳入的模型列表，選擇第一個可用的模型
-    const modelName = modelList[0] || "gemini-2.5-flash-image";
+    // 使用當前模型名稱構建 API URL
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
     console.log(`[Gemini] 嘗試使用模型: ${modelName} (${modelList.length} 個候選模型)`);
     console.log("[Gemini] 調用 API:", apiUrl);
