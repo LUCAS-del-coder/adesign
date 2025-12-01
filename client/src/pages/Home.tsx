@@ -626,7 +626,11 @@ export default function Home() {
                                     size="sm"
                                     variant="default"
                                     className="shadow-md"
-                                    onClick={() => handleDownload(ad.fileUrl, `generated-${ad.id}.png`)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                                    }}
                                   >
                                     <Download className="w-4 h-4 mr-1" />
                                     下載
