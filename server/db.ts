@@ -181,3 +181,38 @@ export async function getEnabledLogosByUserId(userId: number) {
   const { and } = await import("drizzle-orm");
   return await db.select().from(logos).where(and(eq(logos.userId, userId), eq(logos.enabled, 1))).orderBy(desc(logos.createdAt));
 }
+
+// 刪除生成的廣告圖片
+export async function deleteGeneratedAd(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 驗證圖片屬於該用戶
+  const ad = await db.select().from(generatedAds).where(eq(generatedAds.id, id)).limit(1);
+  if (ad.length === 0) {
+    throw new Error("找不到圖片");
+  }
+  if (ad[0].userId !== userId) {
+    throw new Error("無權限刪除此圖片");
+  }
+  
+  await db.delete(generatedAds).where(eq(generatedAds.id, id));
+}
+
+// 批量刪除生成的廣告圖片
+export async function deleteGeneratedAdsBatch(ids: number[], userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // 驗證所有圖片都屬於該用戶
+  const ads = await db.select().from(generatedAds).where(eq(generatedAds.userId, userId));
+  const userAdIds = ads.map(ad => ad.id);
+  const invalidIds = ids.filter(id => !userAdIds.includes(id));
+  
+  if (invalidIds.length > 0) {
+    throw new Error(`無權限刪除以下圖片: ${invalidIds.join(", ")}`);
+  }
+  
+  const { inArray } = await import("drizzle-orm");
+  await db.delete(generatedAds).where(inArray(generatedAds.id, ids));
+}

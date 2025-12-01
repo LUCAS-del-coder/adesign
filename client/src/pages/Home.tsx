@@ -40,6 +40,7 @@ export default function Home() {
   const [showAllAds, setShowAllAds] = useState(false);
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [selectedImageIds, setSelectedImageIds] = useState<Set<number>>(new Set());
 
   const utils = trpc.useUtils();
   
@@ -601,31 +602,61 @@ export default function Home() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* 國家篩選器 */}
-                <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium">篩選國家：</label>
-                  <select
-                    className="px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                    value={countryFilter}
-                    onChange={(e) => setCountryFilter(e.target.value)}
-                  >
-                    <option value="all">全部國家</option>
-                    <option value="TW">台灣</option>
-                    <option value="CN">中國</option>
-                    <option value="HK">香港</option>
-                    <option value="SG">新加坡</option>
-                    <option value="MY">馬來西亞</option>
-                    <option value="TH">泰國</option>
-                    <option value="VN">越南</option>
-                    <option value="ID">印尼</option>
-                    <option value="PH">菲律賓</option>
-                    <option value="KH">柬埔寨</option>
-                    <option value="MM">緬甸</option>
-                    <option value="US">美國</option>
-                    <option value="JP">日本</option>
-                    <option value="KR">韓國</option>
-                    <option value="OTHER">其他</option>
-                  </select>
+                {/* 國家篩選器和批量操作 */}
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium">篩選國家：</label>
+                    <select
+                      className="px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                      value={countryFilter}
+                      onChange={(e) => setCountryFilter(e.target.value)}
+                    >
+                      <option value="all">全部國家</option>
+                      <option value="TW">台灣</option>
+                      <option value="CN">中國</option>
+                      <option value="HK">香港</option>
+                      <option value="SG">新加坡</option>
+                      <option value="MY">馬來西亞</option>
+                      <option value="TH">泰國</option>
+                      <option value="VN">越南</option>
+                      <option value="ID">印尼</option>
+                      <option value="PH">菲律賓</option>
+                      <option value="KH">柬埔寨</option>
+                      <option value="MM">緬甸</option>
+                      <option value="US">美國</option>
+                      <option value="JP">日本</option>
+                      <option value="KR">韓國</option>
+                      <option value="OTHER">其他</option>
+                    </select>
+                  </div>
+                  
+                  {selectedImageIds.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">
+                        已選擇 {selectedImageIds.size} 張
+                      </span>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          if (confirm(`確定要刪除 ${selectedImageIds.size} 張圖片嗎？此操作無法復原。`)) {
+                            deleteBatchMutation.mutate({ ids: Array.from(selectedImageIds) });
+                          }
+                        }}
+                        disabled={deleteBatchMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        批量刪除
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedImageIds(new Set())}
+                      >
+                        取消選擇
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* 圖片庫內容 */}
@@ -637,46 +668,89 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {filteredGeneratedAds.map((ad) => (
-                      <div key={ad.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
-                        <img
-                          src={ad.fileUrl}
-                          alt="Generated"
-                          className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
-                          onClick={() => {
-                            const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
-                            setPreviewIndex(index);
-                            setPreviewImage(ad.fileUrl);
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                    {filteredGeneratedAds.map((ad) => {
+                      const isSelected = selectedImageIds.has(ad.id);
+                      return (
+                        <div 
+                          key={ad.id} 
+                          className={`relative aspect-square rounded-xl overflow-hidden border transition-all hover:shadow-lg ${
+                            isSelected 
+                              ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20" 
+                              : "border-border/50 group hover:border-primary/50"
+                          }`}
+                        >
+                          {/* 選擇框 */}
+                          <div className="absolute top-2 left-2 z-20">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const newSet = new Set(selectedImageIds);
+                                if (e.target.checked) {
+                                  newSet.add(ad.id);
+                                } else {
+                                  newSet.delete(ad.id);
+                                }
+                                setSelectedImageIds(newSet);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-5 h-5 rounded border-2 border-background bg-background/90 cursor-pointer"
+                            />
+                          </div>
+                          
+                          <img
+                            src={ad.fileUrl}
+                            alt="Generated"
+                            className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
+                            onClick={() => {
                               const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
                               setPreviewIndex(index);
                               setPreviewImage(ad.fileUrl);
                             }}
-                          >
-                            <ZoomIn className="w-4 h-4 mr-1" />
-                            預覽
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
-                            }}
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            下載
-                          </Button>
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
+                                setPreviewIndex(index);
+                                setPreviewImage(ad.fileUrl);
+                              }}
+                            >
+                              <ZoomIn className="w-4 h-4 mr-1" />
+                              預覽
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
+                              }}
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              下載
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("確定要刪除此圖片嗎？此操作無法復原。")) {
+                                  deleteImageMutation.mutate({ id: ad.id });
+                                }
+                              }}
+                              disabled={deleteImageMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
                 </div>

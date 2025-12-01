@@ -11,6 +11,8 @@ import {
   createGeneratedAd,
   getGeneratedAdsByUserId,
   getGeneratedAdsByOriginalId,
+  deleteGeneratedAd,
+  deleteGeneratedAdsBatch,
   createLogo,
   getLogosByUserId,
   deleteLogo,
@@ -125,6 +127,25 @@ export const appRouter = router({
       .input(z.object({ originalAdId: z.number() }))
       .query(async ({ input }) => {
         return await getGeneratedAdsByOriginalId(input.originalAdId);
+      }),
+    
+    // 刪除單個生成的廣告圖片
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteGeneratedAd(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    
+    // 批量刪除生成的廣告圖片
+    deleteBatch: protectedProcedure
+      .input(z.object({ ids: z.array(z.number()) }))
+      .mutation(async ({ ctx, input }) => {
+        if (input.ids.length === 0) {
+          throw new Error("請至少選擇一張圖片");
+        }
+        await deleteGeneratedAdsBatch(input.ids, ctx.user.id);
+        return { success: true, deletedCount: input.ids.length };
       }),
     
     // 下載圖片（代理端點，繞過 CORS）
