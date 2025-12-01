@@ -79,38 +79,57 @@
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  /* Primary colors - Modern blue with better contrast */
+  --primary: oklch(0.65 0.2 250);
+  --primary-foreground: oklch(0.98 0.01 250);
+  --sidebar-primary: oklch(0.6 0.18 250);
+  --sidebar-primary-foreground: oklch(0.98 0.01 250);
+  
+  /* Background - Rich dark with subtle blue tint */
+  --background: oklch(0.12 0.015 260);
+  --foreground: oklch(0.95 0.01 260);
+  
+  /* Cards - Elevated dark surfaces */
+  --card: oklch(0.18 0.012 260);
+  --card-foreground: oklch(0.95 0.01 260);
+  --popover: oklch(0.18 0.012 260);
+  --popover-foreground: oklch(0.95 0.01 260);
+  
+  /* Secondary elements */
+  --secondary: oklch(0.22 0.01 260);
+  --secondary-foreground: oklch(0.88 0.01 260);
+  
+  /* Muted elements */
+  --muted: oklch(0.25 0.01 260);
+  --muted-foreground: oklch(0.65 0.02 260);
+  
+  /* Accent - Subtle highlight */
+  --accent: oklch(0.25 0.02 250);
+  --accent-foreground: oklch(0.95 0.01 250);
+  
+  /* Destructive */
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 0);
+  
+  /* Borders and inputs - Subtle but visible */
+  --border: oklch(0.3 0.01 260 / 0.3);
+  --input: oklch(0.22 0.01 260);
+  --ring: oklch(0.6 0.2 250);
+  
+  /* Charts */
+  --chart-1: oklch(0.7 0.2 200);
+  --chart-2: oklch(0.65 0.2 250);
+  --chart-3: oklch(0.6 0.18 280);
+  --chart-4: oklch(0.55 0.16 300);
+  --chart-5: oklch(0.5 0.14 320);
+  
+  /* Sidebar */
+  --sidebar: oklch(0.15 0.01 260);
+  --sidebar-foreground: oklch(0.9 0.01 260);
+  --sidebar-accent: oklch(0.22 0.01 260);
+  --sidebar-accent-foreground: oklch(0.95 0.01 260);
+  --sidebar-border: oklch(0.25 0.01 260 / 0.4);
+  --sidebar-ring: oklch(0.6 0.2 250);
 }
 
 @layer base {
@@ -119,6 +138,41 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Smooth transitions for theme changes */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Enhanced dark mode styling */
+  .dark body {
+    background: linear-gradient(135deg, oklch(0.12 0.015 260) 0%, oklch(0.13 0.018 255) 100%);
+    min-height: 100vh;
+  }
+  
+  /* Glass morphism effect for cards in dark mode */
+  .dark .card,
+  .dark [class*="Card"] {
+    background: oklch(0.18 0.012 260 / 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid oklch(0.25 0.01 260 / 0.3);
+    box-shadow: 
+      0 4px 6px -1px oklch(0 0 0 / 0.2),
+      0 2px 4px -1px oklch(0 0 0 / 0.1),
+      inset 0 1px 0 0 oklch(1 1 1 / 0.05);
+  }
+  
+  /* Enhanced button styles in dark mode */
+  .dark button[class*="Button"] {
+    transition: all 0.2s ease;
+  }
+  
+  .dark button[class*="Button"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px oklch(0.65 0.2 250 / 0.3);
+  }
+  
+  /* Subtle glow for primary elements */
+  .dark [class*="primary"] {
+    box-shadow: 0 0 20px oklch(0.65 0.2 250 / 0.1);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

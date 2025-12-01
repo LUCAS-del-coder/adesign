@@ -259,23 +259,32 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10">
-        <Card className="w-full max-w-md mx-4">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+        
+        <Card className="w-full max-w-md mx-4 relative z-10 border-primary/20 shadow-2xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto mb-4 w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl flex items-center justify-center border border-primary/20 shadow-lg">
+              <Sparkles className="w-10 h-10 text-primary" />
             </div>
-            <CardTitle className="text-2xl">廣告圖生成工具</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              廣告圖生成工具
+            </CardTitle>
+            <CardDescription className="text-base">
               使用 AI 技術，快速生成高效廣告圖變體
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <Button 
-              className="w-full" 
+              className="w-full shadow-lg hover:shadow-xl transition-all duration-300" 
               size="lg"
               onClick={() => window.location.href = getLoginUrl()}
             >
+              <Sparkles className="w-4 h-4 mr-2" />
               登入開始使用
             </Button>
           </CardContent>
@@ -285,15 +294,25 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen bg-gradient-to-br from-primary/3 via-background to-accent/3 relative">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
+        backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
+        backgroundSize: '40px 40px'
+      }}></div>
+      
+      <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50 sticky top-0 z-50 shadow-sm">
         <div className="container py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <h1 className="text-xl font-bold">廣告圖生成工具</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              廣告圖生成工具
+            </h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user?.name}</span>
+            <span className="text-sm text-muted-foreground font-medium">{user?.name}</span>
             <LogoutButton />
           </div>
         </div>
@@ -301,22 +320,24 @@ export default function Home() {
 
       <main className="container py-8">
         <Tabs defaultValue="generate" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="generate">生成廣告</TabsTrigger>
-            <TabsTrigger value="library">圖片庫</TabsTrigger>
-            <TabsTrigger value="elements">Logo 區塊</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-3 bg-muted/50 border border-border/50 p-1 rounded-lg">
+            <TabsTrigger value="generate" className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">生成廣告</TabsTrigger>
+            <TabsTrigger value="library" className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">圖片庫</TabsTrigger>
+            <TabsTrigger value="elements" className="data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">Logo 區塊</TabsTrigger>
           </TabsList>
 
           <TabsContent value="generate" className="space-y-6">
             <div className="grid lg:grid-cols-2 gap-6">
               {/* 上傳區域 */}
-              <Card>
+              <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Upload className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                      <Upload className="w-5 h-5 text-primary" />
+                    </div>
                     上傳廣告圖
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     上傳一張成效好的廣告圖，AI 將分析並生成相似變體
                   </CardDescription>
                 </CardHeader>
@@ -325,7 +346,7 @@ export default function Home() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">國家分類（可選）</label>
                     <select
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                       value={selectedCountry}
                       onChange={(e) => setSelectedCountry(e.target.value)}
                     >
@@ -357,7 +378,7 @@ export default function Home() {
                     onChange={handleFileUpload}
                   />
                   <Button
-                    className="w-full"
+                    className="w-full shadow-md hover:shadow-lg transition-all duration-300"
                     size="lg"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadOriginalMutation.isPending}
@@ -380,22 +401,25 @@ export default function Home() {
                           </Button>
                         )}
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-3">
                         {(showAllAds ? originalAds : originalAds.slice(0, 6)).map((ad) => (
                           <div
                             key={ad.id}
-                            className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
+                            className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all group ${
                               selectedOriginalId === ad.id
-                                ? "border-primary ring-2 ring-primary/20"
-                                : "border-transparent hover:border-primary/50"
+                                ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20 scale-105"
+                                : "border-border/50 hover:border-primary/50 hover:shadow-md"
                             }`}
                             onClick={() => setSelectedOriginalId(ad.id)}
                           >
                             <img
                               src={ad.fileUrl}
                               alt={ad.filename}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                             />
+                            {selectedOriginalId === ad.id && (
+                              <div className="absolute inset-0 bg-primary/10 pointer-events-none"></div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -405,28 +429,30 @@ export default function Home() {
               </Card>
 
               {/* 分析與生成區域 */}
-              <Card>
+              <Card className="border-primary/10 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                    </div>
                     AI 生成變體
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     一鍵生成 3 張相似的廣告圖變體
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {selectedAd ? (
                     <>
-                      <div className="aspect-video rounded-lg overflow-hidden border">
+                      <div className="aspect-video rounded-xl overflow-hidden border border-border/50 bg-muted/30 shadow-inner">
                         <img
                           src={selectedAd.fileUrl}
                           alt={selectedAd.filename}
-                          className="w-full h-full object-contain bg-muted"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                       <Button
-                        className="w-full"
+                        className="w-full shadow-md hover:shadow-lg transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
                         size="lg"
                         onClick={handleGenerateVariants}
                         disabled={generateVariantsMutation.isPending || analyzeImageMutation.isPending}
@@ -456,21 +482,23 @@ export default function Home() {
                       {selectedGeneratedAds.length > 0 && (
                         <div className="space-y-2">
                           <p className="text-sm font-medium">已生成 {selectedGeneratedAds.length} 張變體：</p>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-3">
                             {selectedGeneratedAds.map((ad) => (
-                              <div key={ad.id} className="relative aspect-square rounded-lg overflow-hidden border group">
+                              <div key={ad.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
                                 <img
                                   src={ad.fileUrl}
                                   alt="Generated"
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-3">
                                   <Button
                                     size="sm"
-                                    variant="secondary"
+                                    variant="default"
+                                    className="shadow-md"
                                     onClick={() => handleDownload(ad.fileUrl, `generated-${ad.id}.png`)}
                                   >
-                                    <Download className="w-4 h-4" />
+                                    <Download className="w-4 h-4 mr-1" />
+                                    下載
                                   </Button>
                                 </div>
                               </div>
@@ -480,10 +508,10 @@ export default function Home() {
                       )}
                     </>
                   ) : (
-                    <div className="aspect-video rounded-lg border-2 border-dashed flex items-center justify-center text-muted-foreground">
+                    <div className="aspect-video rounded-xl border-2 border-dashed border-border/50 flex items-center justify-center text-muted-foreground bg-muted/20">
                       <div className="text-center">
-                        <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>請先選擇一張廣告圖</p>
+                        <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-40" />
+                        <p className="text-sm">請先選擇一張廣告圖</p>
                       </div>
                     </div>
                   )}
@@ -493,13 +521,15 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="library">
-            <Card>
+            <Card className="border-primary/10 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <ImageIcon className="w-5 h-5 text-primary" />
+                  </div>
                   圖片庫
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   所有生成的廣告圖變體（共 {generatedAds.length} 張，篩選後 {filteredGeneratedAds.length} 張）
                 </CardDescription>
               </CardHeader>
@@ -508,7 +538,7 @@ export default function Home() {
                 <div className="flex items-center gap-4">
                   <label className="text-sm font-medium">篩選國家：</label>
                   <select
-                    className="px-3 py-2 border rounded-md"
+                    className="px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                     value={countryFilter}
                     onChange={(e) => setCountryFilter(e.target.value)}
                   >
@@ -541,14 +571,14 @@ export default function Home() {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {filteredGeneratedAds.map((ad) => (
-                      <div key={ad.id} className="relative aspect-square rounded-lg overflow-hidden border group">
+                      <div key={ad.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
                         <img
                           src={ad.fileUrl}
                           alt="Generated"
-                          className="w-full h-full object-cover cursor-pointer"
+                          className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
                           onClick={() => setPreviewImage(ad.fileUrl)}
                         />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
                           <Button
                             size="sm"
                             variant="secondary"
@@ -582,23 +612,25 @@ export default function Home() {
           </TabsContent>
 
           <TabsContent value="elements">
-            <Card>
+            <Card className="border-primary/10 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Plus className="w-5 h-5 text-primary" />
+                  </div>
                   Logo 區塊管理
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-sm">
                   上傳 Logo 圖片，啟用後會自動添加到所有生成圖片的右下角
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4 p-4 border rounded-lg">
+                <div className="space-y-4 p-4 border border-border/50 rounded-xl bg-muted/20">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Logo 名稱</label>
                     <input
                       type="text"
-                      className="w-full px-3 py-2 border rounded-md"
+                      className="w-full px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                       placeholder="例如：公司 Logo"
                       value={elementName}
                       onChange={(e) => setElementName(e.target.value)}
@@ -636,25 +668,25 @@ export default function Home() {
                     <p className="text-sm font-medium">已上傳的 Logo：</p>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {logos.map((element) => (
-                        <div key={element.id} className="relative aspect-square rounded-lg overflow-hidden border group">
+                        <div key={element.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
                           <img
                             src={element.fileUrl}
                             alt={element.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                           />
                           <div className="absolute top-2 right-2">
-                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                            <div className={`px-2 py-1 rounded-md text-xs font-medium shadow-md ${
                               element.enabled 
-                                ? "bg-green-500 text-white" 
-                                : "bg-gray-500 text-white"
+                                ? "bg-green-500/90 text-white border border-green-400/30" 
+                                : "bg-muted/90 text-muted-foreground border border-border/50"
                             }`}>
                               {element.enabled ? "已啟用" : "已停用"}
                             </div>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/80 p-2">
-                            <p className="text-xs text-white truncate">{element.name}</p>
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3">
+                            <p className="text-xs text-white font-medium truncate">{element.name}</p>
                           </div>
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
                             <Button
                               size="sm"
                               variant={element.enabled ? "secondary" : "default"}
@@ -687,14 +719,14 @@ export default function Home() {
       {/* 圖片預覽對話框 */}
       {previewImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setPreviewImage(null)}
         >
           <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-4 right-4 bg-background/80 hover:bg-background"
+              className="absolute top-4 right-4 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10"
               onClick={() => setPreviewImage(null)}
             >
               <X className="w-6 h-6" />
@@ -702,12 +734,13 @@ export default function Home() {
             <img
               src={previewImage}
               alt="Preview"
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-border/20"
               onClick={(e) => e.stopPropagation()}
             />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
               <Button
-                variant="secondary"
+                variant="default"
+                className="shadow-lg"
                 onClick={(e) => {
                   e.stopPropagation();
                   const ad = generatedAds.find(a => a.fileUrl === previewImage);
