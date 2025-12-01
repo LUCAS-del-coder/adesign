@@ -1,0 +1,28 @@
+{
+  "query": "SELECT * FROM logos ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT * FROM logos ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30001",
+      "userId": "1",
+      "name": "公司 Logo",
+      "fileKey": "1/elements/F9rnQ_jPjDaRLUlurEn40-test_logo2.png",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/elements/F9rnQ_jPjDaRLUlurEn40-test_logo2.png",
+      "enabled": "0",
+      "createdAt": "2025-12-01 03:21:19"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "name": "測試 Logo",
+      "fileKey": "1/elements/uSV6yOXsLA2fOXllOJww3-test_logo.png",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/elements/uSV6yOXsLA2fOXllOJww3-test_logo.png",
+      "enabled": "1",
+      "createdAt": "2025-12-01 03:06:00"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tname\tfileKey\tfileUrl\tenabled\tcreatedAt\n30001\t1\t公司 Logo\t1/elements/F9rnQ_jPjDaRLUlurEn40-test_logo2.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/elements/F9rnQ_jPjDaRLUlurEn40-test_logo2.png\t0\t2025-12-01 03:21:19\n2\t1\t測試 Logo\t1/elements/uSV6yOXsLA2fOXllOJww3-test_logo.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/elements/uSV6yOXsLA2fOXllOJww3-test_logo.png\t1\t2025-12-01 03:06:00\n",
+  "stderr": "",
+  "execution_time_ms": 1574
+}

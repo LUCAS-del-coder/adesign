@@ -1,0 +1,48 @@
+# Railway ignore file
+# Files and directories to exclude from deployment
+
+# Development files
+node_modules/
+.env
+.env.local
+.env.*.local
+
+# Build artifacts (will be rebuilt on Railway)
+dist/
+*.log
+
+# Test files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+test/
+tests/
+__tests__/
+
+# Documentation
+*.md
+!README.md
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Dependencies (will be installed on Railway)
+pnpm-lock.yaml
+
+# Backup files
+*.backup
+*.bak
+

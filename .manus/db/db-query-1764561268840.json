@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, enabled FROM logos ORDER BY createdAt DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT id, name, enabled FROM logos ORDER BY createdAt DESC;",
+  "rows": [
+    {
+      "id": "90001",
+      "name": "jdb",
+      "enabled": "1"
+    },
+    {
+      "id": "60002",
+      "name": "pg",
+      "enabled": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tenabled\n90001\tjdb\t1\n60002\tpg\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1852
+}

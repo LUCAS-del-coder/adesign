@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, fileUrl, analysisPrompt IS NOT NULL as has_prompt FROM original_ads WHERE id = 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT id, fileUrl, analysisPrompt IS NOT NULL as has_prompt FROM original_ads WHERE id = 1;",
+  "rows": [
+    {
+      "id": "1",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/original/Sw23IbaFj21MF8sikAn1_-1763537962868.png",
+      "has_prompt": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfileUrl\thas_prompt\n1\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/original/Sw23IbaFj21MF8sikAn1_-1763537962868.png\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1526
+}

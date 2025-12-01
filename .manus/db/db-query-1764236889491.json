@@ -1,0 +1,37 @@
+{
+  "query": "SELECT * FROM generated_ads LIMIT 3",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT * FROM generated_ads LIMIT 3",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "originalAdId": "1",
+      "fileKey": "1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png",
+      "prompt": "",
+      "createdAt": "2025-11-27 08:43:51"
+    },
+    {
+      "id": "2",
+      "userId": "1",
+      "originalAdId": "1",
+      "fileKey": "1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png",
+      "prompt": "",
+      "createdAt": "2025-11-27 08:43:52"
+    },
+    {
+      "id": "3",
+      "userId": "1",
+      "originalAdId": "1",
+      "fileKey": "1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png",
+      "prompt": "",
+      "createdAt": "2025-11-27 08:43:52"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\toriginalAdId\tfileKey\tfileUrl\tprompt\tcreatedAt\n1\t1\t1\t1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png\t\t2025-11-27 08:43:51\n2\t1\t1\t1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png\t\t2025-11-27 08:43:52\n3\t1\t1\t1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png\t\t2025-11-27 08:43:52\n",
+  "stderr": "",
+  "execution_time_ms": 1551
+}

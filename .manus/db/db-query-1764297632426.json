@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, originalAdId, fileUrl, createdAt FROM generated_ads ORDER BY createdAt DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT id, originalAdId, fileUrl, createdAt FROM generated_ads ORDER BY createdAt DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "30003",
+      "originalAdId": "2",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/KEL7H0CycJbEHL-gjZ7sb-variant-3.png",
+      "createdAt": "2025-11-27 09:37:24"
+    },
+    {
+      "id": "30002",
+      "originalAdId": "2",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/UTbonvB6Ge-IF_jQ0Rsr8-variant-2.png",
+      "createdAt": "2025-11-27 09:37:24"
+    },
+    {
+      "id": "30001",
+      "originalAdId": "2",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/ce-u1diIoaF0zY7mz0Ug7-variant-1.png",
+      "createdAt": "2025-11-27 09:37:23"
+    },
+    {
+      "id": "2",
+      "originalAdId": "1",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png",
+      "createdAt": "2025-11-27 08:43:52"
+    },
+    {
+      "id": "3",
+      "originalAdId": "1",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png",
+      "createdAt": "2025-11-27 08:43:52"
+    },
+    {
+      "id": "1",
+      "originalAdId": "1",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png",
+      "createdAt": "2025-11-27 08:43:51"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\toriginalAdId\tfileUrl\tcreatedAt\n30003\t2\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/KEL7H0CycJbEHL-gjZ7sb-variant-3.png\t2025-11-27 09:37:24\n30002\t2\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/UTbonvB6Ge-IF_jQ0Rsr8-variant-2.png\t2025-11-27 09:37:24\n30001\t2\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/ce-u1diIoaF0zY7mz0Ug7-variant-1.png\t2025-11-27 09:37:23\n2\t1\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/gIVOeoMwJHqOMUx-xI3Pg-variant-2.png\t2025-11-27 08:43:52\n3\t1\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/xpTRKGR7P156ycSniT6E6-variant-3.png\t2025-11-27 08:43:52\n1\t1\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/1iWfmzw7OIpq-N6MOazSA-variant-1.png\t2025-11-27 08:43:51\n",
+  "stderr": "",
+  "execution_time_ms": 1580
+}

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1764225167020,
+      "tag": "0000_futuristic_iron_monger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1764225221175,
+      "tag": "0001_optimal_toad",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1764556178134,
+      "tag": "0002_windy_micromacro",
+      "breakpoints": true
+    }
+  ]
+}

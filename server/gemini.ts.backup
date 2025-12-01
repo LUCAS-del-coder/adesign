@@ -1,0 +1,311 @@
+import axios from "axios";
+
+/**
+ * Gemini API 整合模組
+ * 使用 Google Gemini API 進行圖片分析和生成
+ */
+
+interface GeminiConfig {
+  apiKey: string;
+  model?: string;
+}
+
+interface ImageGenerationOptions {
+  prompt: string;
+  aspectRatio?: string;
+  imageSize?: string;
+  referenceImages?: string[];
+}
+
+/**
+ * 分析圖片並生成描述提示詞
+ */
+export async function analyzeImageWithGemini(
+  imageUrl: string,
+  apiKey: string
+): Promise<string> {
+  try {
+    console.log("[Gemini] 開始分析圖片:", imageUrl);
+    
+    // 下載圖片並轉換為 base64
+    const imageResponse = await axios.get(imageUrl, {
+      responseType: "arraybuffer",
+      timeout: 30000,
+    });
+    const base64Image = Buffer.from(imageResponse.data).toString("base64");
+    const mimeType = imageResponse.headers["content-type"] || "image/png";
+    
+    console.log("[Gemini] 圖片下載成功, MIME 類型:", mimeType, "大小:", base64Image.length, "bytes");
+
+    // 使用 Gemini Vision API 分析圖片
+    console.log("[Gemini] 調用 Gemini API 進行圖片分析...");
+    
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        contents: [
+          {
+            parts: [
+              {
+                text: `請仔細分析這張廣告圖片，並生成一個詳細的描述，包括：
+1. 整體視覺風格（配色、排版、設計風格）
+2. 主要元素和物件
+3. 文字內容和位置
+4. 構圖和布局
+5. 色彩搭配
+6. 氛圍和情緒
+
+請用簡潔但詳細的方式描述，以便用於生成相似的廣告圖片。`,
+              },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64Image,
+                },
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          topK: 32,
+          topP: 1,
+          maxOutputTokens: 2048,
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      }
+    );
+
+    console.log("[Gemini] API 回應狀態:", response.status);
+    
+    const analysisText =
+      response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    
+    if (!analysisText) {
+      console.error("[Gemini] API 回應中沒有分析文字", JSON.stringify(response.data, null, 2));
+      throw new Error("無法從 Gemini 回應中提取分析結果");
+    }
+    
+    console.log("[Gemini] 分析成功, 提示詞長度:", analysisText.length);
+    return analysisText;
+  } catch (error: any) {
+    console.error("[Gemini] 圖片分析錯誤:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
+    
+    if (error.response?.status === 429) {
+      throw new Error("圖片分析失敗：API 請求配額已用盡，請稍後再試");
+    } else if (error.response?.status === 400) {
+      throw new Error("圖片分析失敗：" + (error.response?.data?.error?.message || "請求參數錯誤"));
+    } else if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      throw new Error("圖片分析失敗：請求超時，請稍後再試");
+    }
+    
+    throw new Error("圖片分析失敗：" + (error.response?.data?.error?.message || error.message));
+  }
+}
+
+/**
+ * 使用 Gemini 生成圖片（基於提示詞和參考圖片）
+ */
+export async function generateImageWithGemini(
+  options: ImageGenerationOptions,
+  apiKey: string
+): Promise<Buffer> {
+  try {
+    const {
+      prompt,
+      aspectRatio = "1:1",
+      imageSize = "1K",
+      referenceImages = [],
+    } = options;
+
+    // 準備請求內容
+    const parts: any[] = [{ text: prompt }];
+
+    // 如果有參考圖片，添加到請求中
+    for (let idx = 0; idx < referenceImages.length; idx++) {
+      const imageUrl = referenceImages[idx];
+      console.log(`[Gemini] 下載參考圖片 ${idx + 1}/${referenceImages.length}:`, imageUrl);
+      
+      try {
+        const imageResponse = await axios.get(imageUrl, {
+          responseType: "arraybuffer",
+          timeout: 30000, // 30秒超時
+        });
+        const base64Image = Buffer.from(imageResponse.data).toString("base64");
+        const mimeType = imageResponse.headers["content-type"] || "image/png";
+        
+        console.log(`[Gemini] 參考圖片 ${idx + 1} 下載成功，大小: ${base64Image.length} bytes, mimeType: ${mimeType}`);
+
+        parts.push({
+          inline_data: {
+            mime_type: mimeType,
+            data: base64Image,
+          },
+        });
+      } catch (error: any) {
+        console.error(`[Gemini] 參考圖片 ${idx + 1} 下載失敗:`, {
+          url: imageUrl,
+          error: error.message,
+          status: error.response?.status,
+          code: error.code,
+        });
+        throw new Error(`無法下載參考圖片 ${idx + 1}: ${error.message}`);
+      }
+    }
+
+    console.log("[Gemini] 開始生成圖片，提示詞:", prompt);
+    console.log("[Gemini] 參考圖片數量:", referenceImages.length);
+    
+    // 簡化請求，先測試最基本的生成
+    const requestBody: any = {
+      contents: [{ parts }],
+    };
+    
+    console.log("[Gemini] 請求體:", JSON.stringify(requestBody, null, 2));
+    
+    // 使用 Gemini 2.5 Flash Image 模型生成圖片
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      requestBody,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 120000, // 120 秒超時，圖片生成需要較長時間
+      }
+    );
+
+    console.log("[Gemini] API 回應狀態:", response.status);
+    console.log("[Gemini] candidates 數量:", response.data.candidates?.length || 0);
+    
+    // 簡化日誌，只輸出 parts 的結構資訊
+    const partsForLog = response.data.candidates?.[0]?.content?.parts;
+    if (partsForLog) {
+      console.log("[Gemini] parts 數量:", partsForLog.length);
+      partsForLog.forEach((part: any, idx: number) => {
+        const keys = Object.keys(part);
+        console.log(`[Gemini] Part ${idx} keys:`, keys);
+        if (part.inline_data || part.inlineData) {
+          const imageData = part.inline_data || part.inlineData;
+          console.log(`[Gemini] Part ${idx} 有圖片數據, mimeType:`, imageData.mime_type || imageData.mimeType);
+          console.log(`[Gemini] Part ${idx} data 長度:`, imageData.data?.length || 0);
+        }
+      });
+    }
+
+    // 提取生成的圖片（base64）
+    const responseParts = response.data.candidates?.[0]?.content?.parts;
+    
+    if (!responseParts || responseParts.length === 0) {
+      console.error("[Gemini] 回應中沒有 parts");
+      throw new Error("未能從 Gemini 回應中提取圖片數據");
+    }
+    
+    // 尋找圖片數據（同時支持 inline_data 和 inlineData 格式）
+    let generatedImageData = null;
+    for (const part of responseParts) {
+      // Gemini API 可能返回 inline_data 或 inlineData
+      const imageData = part.inline_data || part.inlineData;
+      if (imageData?.data) {
+        generatedImageData = imageData.data;
+        console.log("[Gemini] 找到圖片數據，大小:", generatedImageData.length, "bytes");
+        break;
+      }
+    }
+
+    if (!generatedImageData) {
+      console.error("[Gemini] 所有 parts:", JSON.stringify(responseParts, null, 2));
+      throw new Error("未能從 Gemini 回應中提取圖片數據");
+    }
+
+    console.log("[Gemini] 圖片生成成功");
+    return Buffer.from(generatedImageData, "base64");
+  } catch (error: any) {
+    console.error("[Gemini] 圖片生成錯誤:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+    });
+    
+    // 輸出完整的錯誤回應
+    if (error.response?.data) {
+      console.error("[Gemini] API 錯誤回應:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error("[Gemini] 無 API 回應數據");
+    }
+    
+    console.error("[Gemini] 完整錯誤對象:", {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    });
+    
+    // 更友好的錯誤訊息
+    let errorMessage = "圖片生成失敗";
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      errorMessage += ": 請求超時，請稍後再試";
+    } else if (error.response?.status === 429) {
+      errorMessage += ": API 請求配額已用盡，請稍後再試";
+    } else if (error.response?.status === 400) {
+      errorMessage += ": " + (error.response?.data?.error?.message || "請求參數錯誤");
+    } else if (error.response?.data?.error?.message) {
+      errorMessage += ": " + error.response.data.error.message;
+    } else {
+      errorMessage += ": " + error.message;
+    }
+    
+    throw new Error(errorMessage);
+  }
+}
+
+/**
+ * 生成廣告圖變體（基於原始圖片和必要元素）
+ */
+export async function generateAdVariants(
+  originalImageUrl: string,
+  analysisPrompt: string,
+  requiredElementUrls: string[],
+  apiKey: string,
+  count: number = 3
+): Promise<Buffer[]> {
+  const variants: Buffer[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // 構建生成提示詞
+    let prompt = `基於以下描述，生成一張相似但有變化的廣告圖片：\n\n${analysisPrompt}\n\n`;
+
+    if (requiredElementUrls.length > 0) {
+      prompt += `\n重要：請務必在生成的圖片中包含所有提供的必要元素（參考圖片），並保持這些元素的相似度盡可能高。`;
+    }
+
+    prompt += `\n\n變體 ${i + 1}：在保持整體風格和主題一致的前提下，可以適度調整構圖、色彩或細節。`;
+
+    // 準備參考圖片（原始圖 + 必要元素）
+    const referenceImages = [originalImageUrl, ...requiredElementUrls];
+
+    const imageBuffer = await generateImageWithGemini(
+      {
+        prompt,
+        aspectRatio: "1:1",
+        imageSize: "2K",
+        referenceImages,
+      },
+      apiKey
+    );
+
+    variants.push(imageBuffer);
+  }
+
+  return variants;
+}

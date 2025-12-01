@@ -1,0 +1,15 @@
+{
+  "query": "SELECT id, fileUrl, createdAt FROM generated_ads ORDER BY createdAt DESC LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user LtHxqrZriiUHME1.a518cc01aac9 --database hJPoNL8GSdqdSYrgs8ChPR --execute SELECT id, fileUrl, createdAt FROM generated_ads ORDER BY createdAt DESC LIMIT 1;",
+  "rows": [
+    {
+      "id": "30002",
+      "fileUrl": "https://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/UTbonvB6Ge-IF_jQ0Rsr8-variant-2.png",
+      "createdAt": "2025-11-27 09:37:24"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfileUrl\tcreatedAt\n30002\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663182587025/hJPoNL8GSdqdSYrgs8ChPR/1/generated/UTbonvB6Ge-IF_jQ0Rsr8-variant-2.png\t2025-11-27 09:37:24\n",
+  "stderr": "",
+  "execution_time_ms": 1545
+}
