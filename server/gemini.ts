@@ -10,15 +10,20 @@ function extractRetryDelay(error: any): number {
       (detail: any) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
     );
     if (retryInfo?.retryDelay) {
-      // retryDelay 可能是字符串格式 "40s" 或對象
+      // retryDelay 可能是字符串格式 "40s"、"0s" 或對象
       const delay = retryInfo.retryDelay;
       if (typeof delay === "string") {
-        const seconds = parseInt(delay.replace("s", ""));
-        return isNaN(seconds) ? 60 : seconds;
+        const seconds = parseFloat(delay.replace("s", ""));
+        // 如果延遲為 0 或非常小（< 1 秒），使用最小延遲
+        if (isNaN(seconds) || seconds < 1) {
+          return 60; // 最小 60 秒
+        }
+        return Math.ceil(seconds) + 5; // 加 5 秒緩衝
       } else if (typeof delay === "number") {
-        return delay;
+        return delay < 1 ? 60 : Math.ceil(delay) + 5;
       } else if (delay.seconds) {
-        return parseInt(delay.seconds) || 60;
+        const seconds = parseFloat(delay.seconds);
+        return seconds < 1 ? 60 : Math.ceil(seconds) + 5;
       }
     }
     
@@ -26,13 +31,18 @@ function extractRetryDelay(error: any): number {
     const message = error.response?.data?.error?.message || error.message || "";
     const match = message.match(/retry in ([\d.]+)s/i);
     if (match) {
-      return Math.ceil(parseFloat(match[1])) + 5; // 加 5 秒緩衝
+      const seconds = parseFloat(match[1]);
+      // 如果延遲為 0 或非常小，使用最小延遲
+      if (seconds < 1) {
+        return 60;
+      }
+      return Math.ceil(seconds) + 5; // 加 5 秒緩衝
     }
   } catch (e) {
     // 忽略解析錯誤
   }
   
-  // 默認重試延遲：60 秒
+  // 默認重試延遲：60 秒（確保有足夠時間讓配額重置）
   return 60;
 }
 
