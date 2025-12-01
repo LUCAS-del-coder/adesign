@@ -650,114 +650,16 @@ export async function generateAdVariants(
   
   const generatePromises = Array.from({ length: count }, async (_, i) => {
     try {
-      // 為每個變體定義不同的相似度要求（80%, 60%, 40%）
+      // 所有變體都使用 40% 相似度（用戶要求）
       // 使用極度強制性的語言，確保模型嚴格遵守相似度要求
       const similarityLevels = [
         {
-          similarity: 80,
-          instruction: `=== VARIATION 1: 80% SIMILARITY - STRICT REQUIREMENTS ===
-
-🎯 MANDATORY SIMILARITY LEVEL: This image must be 80% IDENTICAL to the original. You are NOT allowed to make significant changes.
-
-⚠️ CRITICAL: If this image looks more than 20% different from the original, you have FAILED.
-
-EXACT REQUIREMENTS (MUST FOLLOW):
-1. COMPOSITION: Keep EXACTLY 80% identical
-   - Same layout structure (80% same)
-   - Same element positions (80% same positions)
-   - Same arrangement (80% same arrangement)
-   - Only 20% of elements can be repositioned (minimal movement)
-
-2. COLORS: Keep EXACTLY 80% same colors
-   - Use 80% of the original color palette
-   - Only 20% color adjustments allowed (slightly brighter/darker, minor saturation tweaks)
-   - DO NOT change the overall color scheme
-
-3. PERSPECTIVE: Keep EXACTLY 80% same camera angle
-   - Same viewpoint (80% same)
-   - Same angle (80% same)
-   - Same distance (80% same)
-   - Only 20% perspective adjustment allowed
-
-4. BACKGROUND: Keep EXACTLY 80% same background
-   - Same style (80% same)
-   - Same atmosphere (80% same)
-   - Same feel (80% same)
-   - Only 20% background modification allowed
-
-5. TEXT POSITION: Keep EXACTLY 80% same text placement
-   - Text in similar positions (80% same)
-   - Similar sizes (80% same)
-   - Only 20% text repositioning allowed
-
-6. CHANGES ALLOWED: ONLY these minimal changes:
-   - Tiny color tweaks (less than 10% change)
-   - Minor text size adjustments (less than 10% change)
-   - Slight element repositioning (less than 10% movement)
-   - Small refinements and optimizations
-
-❌ FORBIDDEN: Do NOT make moderate or major changes. Do NOT rearrange elements significantly. Do NOT change colors dramatically.
-
-✅ RESULT: The image should look almost IDENTICAL to the original, like a refined/optimized version with only minor improvements.
-
-VERIFICATION: Before generating, ask: "Does this look 80% identical to the original?" If not, reduce changes.`,
-        },
-        {
-          similarity: 60,
-          instruction: `=== VARIATION 2: 60% SIMILARITY - STRICT REQUIREMENTS ===
-
-🎯 MANDATORY SIMILARITY LEVEL: This image must be 60% SIMILAR and 40% DIFFERENT from the original. You MUST make NOTICEABLE changes.
-
-⚠️ CRITICAL: This must be VISIBLY DIFFERENT from Variation 1. If it looks too similar to Variation 1, you have FAILED.
-
-EXACT REQUIREMENTS (MUST FOLLOW):
-1. COMPOSITION: Modify EXACTLY 40%
-   - Change layout structure moderately (40% different layout)
-   - Rearrange elements to different positions (30-50% movement from original)
-   - Keep 60% same arrangement, change 40% arrangement
-   - Elements should be in noticeably different positions
-
-2. COLORS: Change EXACTLY 40%
-   - Adjust color palette noticeably (40% different colors)
-   - Different saturation levels (40% different)
-   - Different brightness (40% different)
-   - Some color shifts (40% different color scheme)
-   - Keep 60% same colors, change 40% colors
-
-3. PERSPECTIVE: Change EXACTLY 40%
-   - Use a different but related camera angle (40% different)
-   - Side view instead of front, or slightly different angle (40% different)
-   - Keep 60% same perspective, change 40% perspective
-
-4. BACKGROUND: Change EXACTLY 40%
-   - Alter background style more significantly (40% different)
-   - Different texture, different gradient, different pattern (40% different)
-   - Keep 60% same background feel, change 40% background
-
-5. TEXT POSITION: Change EXACTLY 40%
-   - Move text to different but logical areas (40% different positions)
-   - Top to bottom, left to right, different sizes (40% different)
-   - Keep 60% same text concept, change 40% text placement
-
-6. CHANGES REQUIRED: Make MODERATE changes:
-   - Different color treatment (40% different)
-   - Varied element sizes (40% different)
-   - Adjusted spacing (40% different)
-   - Different text positioning (40% different)
-
-❌ FORBIDDEN: Do NOT make it too similar to Variation 1. Do NOT make it too different (should be 60% similar, not 40% similar).
-
-✅ RESULT: Should be recognizably related to the original but with CLEAR, NOTICEABLE visual differences.
-
-VERIFICATION: Before generating, ask: "Is this VISIBLY DIFFERENT from Variation 1? Is it 60% similar to original?" If not, adjust accordingly.`,
-        },
-        {
           similarity: 40,
-          instruction: `=== VARIATION 3: 40% SIMILARITY - STRICT REQUIREMENTS ===
+          instruction: `=== VARIATION ${i + 1}: 40% SIMILARITY - STRICT REQUIREMENTS ===
 
 🎯 MANDATORY SIMILARITY LEVEL: This image must be 40% SIMILAR and 60% DIFFERENT from the original. You MUST make MAJOR creative changes.
 
-⚠️ CRITICAL: This must be the MOST DIFFERENT variation. If it looks similar to Variations 1 or 2, you have FAILED.
+⚠️ CRITICAL: This variation must be SIGNIFICANTLY DIFFERENT from the original. If it looks too similar to the original, you have FAILED.
 
 EXACT REQUIREMENTS (MUST FOLLOW):
 1. COMPOSITION: Change EXACTLY 60%
@@ -765,6 +667,7 @@ EXACT REQUIREMENTS (MUST FOLLOW):
    - Completely rearrange elements (50-70% movement from original)
    - New arrangement (60% different arrangement)
    - Keep only 40% same composition, change 60% composition
+   - Elements should be in dramatically different positions
 
 2. COLORS: Change EXACTLY 60%
    - Transform color palette dramatically (60% different colors)
@@ -772,41 +675,57 @@ EXACT REQUIREMENTS (MUST FOLLOW):
    - Different temperature (60% different - warmer or cooler)
    - Major color shifts (60% different color palette)
    - Keep only 40% same colors, change 60% colors
+   - Make the color changes VISIBLE and DRAMATIC
 
 3. PERSPECTIVE: Change EXACTLY 60%
    - Use a dramatically different camera angle (60% different)
    - Top-down instead of front, close-up instead of wide (60% different)
    - Completely different viewpoint (60% different)
    - Keep only 40% same perspective, change 60% perspective
+   - The perspective change should be OBVIOUS
 
 4. BACKGROUND: Change EXACTLY 60%
    - Completely alter background style and atmosphere (60% different)
    - Solid to gradient, pattern to texture (60% different)
    - Different mood (60% different atmosphere)
    - Keep only 40% same background feel, change 60% background
+   - Make the background change NOTICEABLE
 
 5. TEXT POSITION: Change EXACTLY 60%
    - Reposition text to entirely different areas (60% different positions)
    - Opposite sides, different layout (60% different)
    - Different sizes, different arrangement (60% different)
    - Keep only 40% same text concept, change 60% text placement
+   - Text should be in CLEARLY different locations
 
-6. CHANGES REQUIRED: Make SUBSTANTIAL changes:
+6. CHANGES REQUIRED: Make SUBSTANTIAL, DRAMATIC changes:
    - Different visual style (60% different)
    - Dramatic color shifts (60% different)
    - Major element repositioning (60% different)
    - Completely different text layout (60% different)
    - New composition focus (60% different)
+   - Creative reinterpretation while maintaining core message
 
-❌ FORBIDDEN: Do NOT make it similar to Variations 1 or 2. Do NOT keep too much similarity (should be 40% similar, not 60% similar).
+❌ FORBIDDEN: 
+   - Do NOT keep too much similarity (should be 40% similar, not 50% or 60% similar)
+   - Do NOT make subtle changes - make DRAMATIC changes
+   - Do NOT keep elements in similar positions
+   - Do NOT use similar color schemes
 
-✅ RESULT: Should maintain core marketing message but look DISTINCTLY, DRAMATICALLY DIFFERENT from original and both Variations 1 & 2.
+✅ RESULT: Should maintain core marketing message and brand identity but look DISTINCTLY, DRAMATICALLY DIFFERENT from the original. The changes should be OBVIOUS and CREATIVE.
 
-VERIFICATION: Before generating, ask: "Is this the MOST DIFFERENT? Is it only 40% similar to original? Is it clearly different from Variations 1 & 2?" If not, make MORE changes.`,
+VERIFICATION: Before generating, ask yourself:
+- "Is this only 40% similar to the original?" → Must be YES
+- "Are the changes DRAMATIC and OBVIOUS?" → Must be YES
+- "Does it look significantly different from the original?" → Must be YES
+- "Have I changed 60% of the visual elements?" → Must be YES
+
+If ANY answer is NO, make MORE dramatic changes.`,
         },
       ];
       
-      const similarityConfig = similarityLevels[i] || similarityLevels[2];
+      // 所有變體都使用 40% 相似度配置
+      const similarityConfig = similarityLevels[0];
       const variationPrompt = similarityConfig.instruction;
 
       // 從分析結果中提取所有必須使用的英文文字
