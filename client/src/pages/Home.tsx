@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Upload, Image as ImageIcon, Sparkles, Download, Trash2, Plus, ZoomIn, X } from "lucide-react";
+import { Upload, Image as ImageIcon, Sparkles, Download, Trash2, Plus, ZoomIn, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
@@ -228,22 +228,41 @@ export default function Home() {
     }
   };
 
-  const handleDownload = (url: string, filename: string) => {
-    console.log('[Download] Starting download:', filename);
-    console.log('[Download] URL:', url);
-    
-    // 直接使用 URL 下載（即使有 CORS 問題，也會在新標籤頁打開）
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    toast.success("圖片下載已開始（如果在新標籤頁打開，請右鍵點擊圖片並選擇「將圖片另存為」）");
-    console.log('[Download] Download triggered');
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      console.log('[Download] Starting download:', filename);
+      console.log('[Download] URL:', url);
+      
+      // 使用 fetch 下載圖片並轉換為 blob，避免 CORS 問題
+      const response = await fetch(url, {
+        mode: 'cors',
+        credentials: 'omit',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`下載失敗: ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // 創建下載連結
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // 清理 blob URL
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast.success("圖片下載成功！");
+      console.log('[Download] Download completed');
+    } catch (error: any) {
+      console.error('[Download] Error:', error);
+      toast.error(`下載失敗: ${error.message || '未知錯誤'}`);
+    }
   };
 
   if (loading) {
@@ -569,14 +588,18 @@ export default function Home() {
                     <p>{generatedAds.length === 0 ? "尚未生成任何圖片" : "沒有符合篩選條件的圖片"}</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {filteredGeneratedAds.map((ad) => (
                       <div key={ad.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
                         <img
                           src={ad.fileUrl}
                           alt="Generated"
                           className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
-                          onClick={() => setPreviewImage(ad.fileUrl)}
+                          onClick={() => {
+                            const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
+                            setPreviewIndex(index);
+                            setPreviewImage(ad.fileUrl);
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
                           <Button
@@ -584,6 +607,8 @@ export default function Home() {
                             variant="secondary"
                             onClick={(e) => {
                               e.stopPropagation();
+                              const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
+                              setPreviewIndex(index);
                               setPreviewImage(ad.fileUrl);
                             }}
                           >
@@ -666,7 +691,7 @@ export default function Home() {
                 {logos.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium">已上傳的 Logo：</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                       {logos.map((element) => (
                         <div key={element.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
                           <img
@@ -717,33 +742,88 @@ export default function Home() {
       </main>
 
       {/* 圖片預覽對話框 */}
-      {previewImage && (
+      {previewImage && previewIndex >= 0 && (
         <div 
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
-          onClick={() => setPreviewImage(null)}
+          onClick={() => {
+            setPreviewImage(null);
+            setPreviewIndex(-1);
+          }}
         >
           <div className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center">
             <Button
               variant="ghost"
               size="icon"
               className="absolute top-4 right-4 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10"
-              onClick={() => setPreviewImage(null)}
+              onClick={() => {
+                setPreviewImage(null);
+                setPreviewIndex(-1);
+              }}
             >
               <X className="w-6 h-6" />
             </Button>
+            
+            {/* 上一頁按鈕 */}
+            {previewIndex > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const prevIndex = previewIndex - 1;
+                  const prevAd = filteredGeneratedAds[prevIndex];
+                  if (prevAd) {
+                    setPreviewIndex(prevIndex);
+                    setPreviewImage(prevAd.fileUrl);
+                  }
+                }}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </Button>
+            )}
+            
+            {/* 下一頁按鈕 */}
+            {previewIndex < filteredGeneratedAds.length - 1 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const nextIndex = previewIndex + 1;
+                  const nextAd = filteredGeneratedAds[nextIndex];
+                  if (nextAd) {
+                    setPreviewIndex(nextIndex);
+                    setPreviewImage(nextAd.fileUrl);
+                  }
+                }}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </Button>
+            )}
+            
             <img
               src={previewImage}
               alt="Preview"
               className="max-w-full max-h-full object-contain rounded-xl shadow-2xl border border-border/20"
               onClick={(e) => e.stopPropagation()}
             />
+            
+            {/* 圖片索引指示器 */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/90 px-4 py-2 rounded-lg border border-border/50 shadow-lg z-10">
+              <span className="text-sm font-medium">
+                {previewIndex + 1} / {filteredGeneratedAds.length}
+              </span>
+            </div>
+            
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
               <Button
                 variant="default"
                 className="shadow-lg"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const ad = generatedAds.find(a => a.fileUrl === previewImage);
+                  const ad = filteredGeneratedAds[previewIndex];
                   if (ad) handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
                 }}
               >
