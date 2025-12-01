@@ -308,10 +308,21 @@ export default function Home() {
       const response = await fetch(url, {
         mode: 'cors',
         credentials: 'omit',
+        cache: 'no-cache',
       });
       
       if (!response.ok) {
-        throw new Error(`下載失敗: ${response.statusText}`);
+        // 如果 CORS 失敗，嘗試使用備用方案
+        console.warn('[Download] Direct download failed, trying alternative method');
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast.info("已在新標籤頁打開圖片，請右鍵保存");
+        return;
       }
       
       const blob = await response.blob();
@@ -326,13 +337,22 @@ export default function Home() {
       document.body.removeChild(a);
       
       // 清理 blob URL
-      window.URL.revokeObjectURL(blobUrl);
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+      }, 100);
       
-      toast.success("圖片下載成功！");
-      console.log('[Download] Download completed');
-    } catch (error: any) {
+      toast.success("下載成功");
+    } catch (error) {
       console.error('[Download] Error:', error);
-      toast.error(`下載失敗: ${error.message || '未知錯誤'}`);
+      // 如果所有方法都失敗，提供備用方案
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.info("已在新標籤頁打開圖片，請右鍵保存");
     }
   };
 
