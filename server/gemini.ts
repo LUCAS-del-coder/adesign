@@ -98,65 +98,88 @@ export async function analyzeImageWithGemini(
 5. Atmosphere and emotional tone
 6. Target audience and marketing message
 
-=== CRITICAL TEXT ANALYSIS SECTION (MOST IMPORTANT) ===
+=== CRITICAL TEXT ANALYSIS SECTION (MOST IMPORTANT - DO NOT SKIP) ===
+
+⚠️ WARNING: If you miss ANY text or leave ANY non-English text untranslated, the generated images will be UNUSABLE.
 
 For ALL text in the image, you MUST follow these STRICT steps:
 
-STEP 1: IDENTIFY ALL TEXT ELEMENTS
-- Scan the ENTIRE image for ANY text (headlines, body text, captions, labels, etc.)
-- List EVERY text element you find, no matter how small
-- Do NOT skip any text
+STEP 1: IDENTIFY ALL TEXT ELEMENTS (MANDATORY)
+- Scan the ENTIRE image pixel by pixel for ANY text
+- Look for: headlines, subheadings, body text, captions, labels, buttons, tags, watermarks, logos with text, etc.
+- List EVERY text element you find, no matter how small or in what language
+- Count the total number of text elements
+- Do NOT skip any text - missing even one character is UNACCEPTABLE
 
-STEP 2: TRANSLATE ALL NON-ENGLISH TEXT
+STEP 2: TRANSLATE ALL NON-ENGLISH TEXT (MANDATORY)
 - For each text element that is NOT in English:
-  * Write: "ORIGINAL TEXT: [exact text in original language]"
-  * Write: "ENGLISH TRANSLATION: [professional English translation]"
+  * Write: "ORIGINAL TEXT: [exact text in original language - copy it character by character]"
+  * Write: "ENGLISH TRANSLATION: [professional English translation - this is what MUST appear in generated images]"
   * Write: "ORIGINAL LANGUAGE: [language name]"
+  * Write: "POSITION: [where in the image - top, bottom, left, right, center, etc.]"
 - For text that IS already in English:
   * Write: "TEXT: [exact English text]"
-  * Note: "Already in English, preserve as-is or suggest minor improvements"
+  * Write: "POSITION: [where in the image]"
+  * Note: "Already in English, use this exact text in generated images"
 
-STEP 3: PROVIDE COMPLETE TEXT LIST
-Format your text analysis like this:
+STEP 3: PROVIDE COMPLETE TEXT LIST (MANDATORY FORMAT)
+You MUST format your text analysis EXACTLY like this:
 ---
-TEXT ELEMENTS IN IMAGE:
-1. [Location/Position]: ORIGINAL: "[original text]" → ENGLISH: "[translation]" (Language: [language])
-2. [Location/Position]: TEXT: "[English text]" (Already in English)
-3. [Continue for ALL text elements...]
+COMPLETE TEXT ELEMENTS LIST (ALL TEXT IN IMAGE):
+1. POSITION: [location] | ORIGINAL: "[original text]" | ENGLISH: "[translation]" | LANGUAGE: [language]
+2. POSITION: [location] | TEXT: "[English text]" | NOTE: Already in English
+3. POSITION: [location] | ORIGINAL: "[original text]" | ENGLISH: "[translation]" | LANGUAGE: [language]
+[Continue for ALL text elements - do not stop until you have listed EVERY text element]
+TOTAL TEXT ELEMENTS FOUND: [number]
 ---
 
-STEP 4: QUALITY REQUIREMENTS FOR TRANSLATIONS
+STEP 4: CREATE ENGLISH-ONLY TEXT LIST FOR GENERATION
+After listing all text, create a separate section with ONLY the English text that must appear:
+---
+MANDATORY ENGLISH TEXT FOR GENERATED IMAGES (USE THESE EXACT TEXTS):
+1. "[English text 1]" - Position: [location]
+2. "[English text 2]" - Position: [location]
+3. "[English text 3]" - Position: [location]
+[Continue for all text elements]
+---
+
+STEP 5: QUALITY REQUIREMENTS FOR TRANSLATIONS
 - Use professional, native English marketing copy
 - Maintain exact meaning and intent
 - Preserve persuasive tone and emotional impact
 - Keep marketing message and call-to-action strength
 - Natural, fluent English that sounds like professional copywriting
 - High-quality, compelling, and professionally written
+- If original is already English, preserve it exactly
 
-=== CRITICAL RULES ===
-- MANDATORY: Identify and translate EVERY text element - do not miss any
-- MANDATORY: If you see Chinese, Japanese, Korean, or any other non-English text, translate ALL of it
+=== ABSOLUTE CRITICAL RULES ===
+- MANDATORY: Identify and translate EVERY text element - missing even one is a CRITICAL FAILURE
+- MANDATORY: If you see Chinese, Japanese, Korean, Arabic, or ANY non-English text, translate ALL of it
 - MANDATORY: List ALL text elements explicitly with their English translations
-- MANDATORY: Do NOT leave any non-English text untranslated
+- MANDATORY: Do NOT leave any non-English text untranslated - ZERO tolerance
 - MANDATORY: Write the ENTIRE description in English
+- MANDATORY: Create the "MANDATORY ENGLISH TEXT FOR GENERATED IMAGES" section with exact English texts
 
 === OUTPUT FORMAT ===
 
-Provide your analysis in this structure:
+Provide your analysis in this EXACT structure:
 
 VISUAL ANALYSIS:
-[Describe visual elements, colors, composition, etc.]
+[Describe visual elements, colors, composition, etc. - in English only]
 
-TEXT ANALYSIS:
-[List ALL text elements with translations as specified above]
+COMPLETE TEXT ELEMENTS LIST (ALL TEXT IN IMAGE):
+[Format as specified in STEP 3 - list EVERY text element]
+
+MANDATORY ENGLISH TEXT FOR GENERATED IMAGES (USE THESE EXACT TEXTS):
+[Format as specified in STEP 4 - list ONLY English texts that must appear]
 
 MARKETING MESSAGE:
-[Describe the marketing message and target audience]
+[Describe the marketing message and target audience - in English only]
 
 GENERATION INSTRUCTIONS:
-[Provide clear instructions for generating similar images with professional English text]
+[Provide clear instructions for generating similar images - emphasize that ONLY the English texts from the "MANDATORY ENGLISH TEXT" section should appear]
 
-Remember: The text analysis section is CRITICAL - you must identify and translate EVERY text element in the image.`,
+Remember: The text analysis section is CRITICAL. If you miss ANY text or leave ANY non-English text, the generated images will be UNUSABLE. Be thorough and complete.`,
               },
               {
                 inline_data: {
@@ -644,9 +667,34 @@ This should be the MOST DIFFERENT variation. Make sure it looks significantly di
       const similarityConfig = similarityLevels[i] || similarityLevels[2];
       const variationPrompt = similarityConfig.instruction;
 
+      // 從分析結果中提取所有必須使用的英文文字
+      // 嘗試從分析結果中提取 "MANDATORY ENGLISH TEXT FOR GENERATED IMAGES" 部分
+      let mandatoryEnglishTexts = "";
+      const mandatoryTextMatch = analysisPrompt.match(/MANDATORY ENGLISH TEXT FOR GENERATED IMAGES[^\n]*:([\s\S]*?)(?=MARKETING MESSAGE|GENERATION INSTRUCTIONS|$)/i);
+      if (mandatoryTextMatch) {
+        mandatoryEnglishTexts = mandatoryTextMatch[1].trim();
+        console.log(`[Gemini] 從分析結果中提取到必須使用的英文文字:`, mandatoryEnglishTexts.substring(0, 200));
+      } else {
+        // 如果沒有找到，嘗試從 "COMPLETE TEXT ELEMENTS LIST" 中提取英文翻譯
+        const textListMatch = analysisPrompt.match(/COMPLETE TEXT ELEMENTS LIST[^\n]*:([\s\S]*?)(?=MANDATORY ENGLISH TEXT|MARKETING MESSAGE|GENERATION INSTRUCTIONS|$)/i);
+        if (textListMatch) {
+          const textList = textListMatch[1];
+          // 提取所有 "ENGLISH: [text]" 或 "TEXT: [text]" 的部分
+          const englishTexts = textList.match(/(?:ENGLISH|TEXT):\s*"([^"]+)"/gi) || [];
+          if (englishTexts.length > 0) {
+            mandatoryEnglishTexts = englishTexts.map((t, i) => `${i + 1}. ${t.replace(/^(?:ENGLISH|TEXT):\s*"/i, '').replace(/"$/, '')}`).join('\n');
+            console.log(`[Gemini] 從文字列表中提取到 ${englishTexts.length} 個英文文字`);
+          }
+        }
+      }
+
       // 構建生成提示詞（使用英文，不包含 Logo，Logo 將在後期疊加）
-      // 加強文字轉換要求，並明確列出需要翻譯的文字
-      const prompt = `Create a high-quality advertisement image based on the following description:\n\n${analysisPrompt}\n\n${variationPrompt}\n\n=== ABSOLUTE MANDATORY TEXT REQUIREMENTS (NO EXCEPTIONS) ===\n\n1. TEXT LANGUAGE - STRICTLY ENFORCED:\n   - ALL text in the generated image MUST be in ENGLISH ONLY\n   - ZERO tolerance for non-English characters (Chinese, Japanese, Korean, etc.)\n   - If you see ANY non-English text in the description above, you MUST translate it to English\n   - Every single character must be English\n\n2. TEXT TRANSLATION PROCESS:\n   - Step 1: Identify ALL text elements mentioned in the description\n   - Step 2: For each non-English text, translate to professional native English\n   - Step 3: Ensure the translation maintains meaning, tone, and impact\n   - Step 4: Use natural, fluent English that sounds like professional copywriting\n   - Step 5: Before generating, verify ALL text will be in English\n\n3. TEXT QUALITY REQUIREMENTS:\n   - Professional, native English marketing copy\n   - Clear, compelling, and professionally written\n   - Proper English grammar, spelling, and punctuation\n   - High-quality, legible, and properly formatted\n   - Maintains advertising impact and persuasive tone\n\n4. FINAL CHECK:\n   - Before finalizing the image, mentally verify: "Are ALL text elements in English?"\n   - If ANY text is not English, DO NOT generate - fix it first\n   - The generated image must have ZERO non-English characters\n\n=== END OF TEXT REQUIREMENTS ===\n\nFocus on creating a professional, polished advertisement with EXCEPTIONAL English text quality. The similarity level must be approximately ${similarityConfig.similarity}% as strictly specified above.`;
+      // 極度強化文字轉換要求，並明確列出必須使用的英文文字
+      const textRequirementsSection = mandatoryEnglishTexts 
+        ? `\n\n=== MANDATORY ENGLISH TEXTS TO USE (COPY THESE EXACTLY) ===\n\nThe following English texts MUST appear in the generated image. Use these EXACT texts - do not modify, do not translate, do not change:\n\n${mandatoryEnglishTexts}\n\nCRITICAL: These are the ONLY texts that should appear in the image. Do NOT add any other text. Do NOT use any non-English characters.`
+        : `\n\n=== MANDATORY TEXT REQUIREMENTS ===\n\n⚠️ CRITICAL: The analysis above contains text elements. You MUST:\n1. Find ALL text elements mentioned in the description\n2. Use ONLY their English translations\n3. Do NOT use any original non-English text\n4. Every single character in the image must be English`;
+
+      const prompt = `Create a high-quality advertisement image based on the following description:\n\n${analysisPrompt}\n\n${variationPrompt}${textRequirementsSection}\n\n=== ABSOLUTE MANDATORY TEXT REQUIREMENTS (ZERO TOLERANCE) ===\n\n🚫 CRITICAL RULES - NO EXCEPTIONS:\n1. ALL text in the generated image MUST be in ENGLISH ONLY\n2. ZERO tolerance for ANY non-English characters (Chinese, Japanese, Korean, Arabic, etc.)\n3. If the description mentions any non-English text, you MUST use its English translation\n4. Every single character, word, and sentence must be English\n5. Do NOT mix languages - it's either ALL English or the image is UNUSABLE\n\n📋 TEXT USAGE PROCESS:\n1. Review the "MANDATORY ENGLISH TEXTS TO USE" section above (if provided)\n2. Use ONLY those exact English texts in the generated image\n3. If no mandatory texts are listed, extract ALL English translations from the description\n4. Place texts in appropriate positions matching the original layout\n5. Before generating, verify: "Will ALL text in this image be English?"\n6. If ANY text might not be English, DO NOT generate - fix it first\n\n✅ TEXT QUALITY REQUIREMENTS:\n- Professional, native English marketing copy\n- Clear, compelling, and professionally written\n- Proper English grammar, spelling, and punctuation\n- High-quality, legible, and properly formatted\n- Maintains advertising impact and persuasive tone\n\n🔍 FINAL VERIFICATION:\nBefore finalizing the image, ask yourself:\n- "Are ALL text elements in English?" → Must be YES\n- "Are there ANY non-English characters?" → Must be NO\n- "Did I use the exact English texts from the mandatory list?" → Must be YES\n\nIf ANY answer is wrong, DO NOT generate the image. Fix it first.\n\n=== END OF TEXT REQUIREMENTS ===\n\nFocus on creating a professional, polished advertisement with EXCEPTIONAL English text quality. The similarity level must be approximately ${similarityConfig.similarity}% as strictly specified above. Remember: The image is UNUSABLE if it contains ANY non-English text.`;
 
       console.log(`[Gemini] 開始生成變體 ${i + 1}/${count}`);
       const imageBuffer = await generateImageWithGemini(
