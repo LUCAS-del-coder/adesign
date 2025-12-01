@@ -208,33 +208,59 @@ export default function Home() {
         setGenerationProgress(30);
       }
 
-      // 使用更智能的進度更新：根據時間估算，但不會超過 95%
-      // 這樣可以給生成過程更多時間，避免卡在 90%
+      // 使用更智能的進度更新：根據時間估算，但不會超過 98%
+      // 生成 3 張圖片可能需要較長時間，特別是使用 Gemini API
       const startTime = Date.now();
-      const estimatedDuration = 120000; // 估計總時長 2 分鐘（120秒）
+      const estimatedDuration = 300000; // 估計總時長 5 分鐘（300秒），給足夠的時間
       
-      const progressInterval = setInterval(() => {
+      let progressInterval: NodeJS.Timeout | null = null;
+      
+      // 啟動進度更新
+      progressInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
-        const timeBasedProgress = Math.min(95, Math.floor((elapsed / estimatedDuration) * 95));
+        // 使用對數函數讓進度增長更合理：前 2 分鐘快速增長到 80%，之後緩慢增長到 98%
+        let timeBasedProgress: number;
+        if (elapsed < 120000) {
+          // 前 2 分鐘：從 30% 增長到 80%
+          timeBasedProgress = 30 + (elapsed / 120000) * 50;
+        } else {
+          // 2 分鐘後：從 80% 緩慢增長到 98%
+          const remainingTime = Math.min(elapsed - 120000, 180000); // 最多再等 3 分鐘
+          timeBasedProgress = 80 + (remainingTime / 180000) * 18;
+        }
+        
+        timeBasedProgress = Math.min(98, timeBasedProgress);
         
         setGenerationProgress(prev => {
           // 使用時間基礎的進度，但確保不會倒退
-          return Math.max(prev, timeBasedProgress);
+          return Math.max(prev, Math.floor(timeBasedProgress));
         });
-      }, 500); // 每 500ms 更新一次，更流暢
+      }, 1000); // 每 1 秒更新一次
 
-      await generateVariantsMutation.mutateAsync({
-        originalAdId: selectedOriginalId,
-        prompt: selectedAd.analysisPrompt || "",
-      });
+      try {
+        await generateVariantsMutation.mutateAsync({
+          originalAdId: selectedOriginalId,
+          prompt: selectedAd.analysisPrompt || "",
+        });
 
-      clearInterval(progressInterval);
-      setGenerationProgress(100);
-
-      setTimeout(() => setGenerationProgress(0), 1000);
-    } catch (error) {
-      setGenerationProgress(0);
-    }
+        // 成功完成
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        setGenerationProgress(100);
+        toast.success("圖片生成成功！");
+        
+        setTimeout(() => setGenerationProgress(0), 2000);
+      } catch (error: any) {
+        // 發生錯誤
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
+        setGenerationProgress(0);
+        const errorMessage = error?.message || "生成失敗，請檢查 Railway 日誌";
+        toast.error(`生成失敗: ${errorMessage}`);
+        console.error("[Generate] Error in handleGenerateVariants:", error);
+      }
   };
 
   const handleDownload = async (url: string, filename: string) => {
