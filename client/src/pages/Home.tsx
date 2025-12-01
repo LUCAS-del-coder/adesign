@@ -102,6 +102,28 @@ export default function Home() {
     },
   });
 
+  const deleteImageMutation = trpc.generatedAds.delete.useMutation({
+    onSuccess: () => {
+      toast.success("圖片已刪除");
+      utils.generatedAds.list.invalidate();
+      setSelectedImageIds(new Set());
+    },
+    onError: (error) => {
+      toast.error("刪除失敗：" + error.message);
+    },
+  });
+
+  const deleteBatchMutation = trpc.generatedAds.deleteBatch.useMutation({
+    onSuccess: (data) => {
+      toast.success(`已刪除 ${data.deletedCount} 張圖片`);
+      utils.generatedAds.list.invalidate();
+      setSelectedImageIds(new Set());
+    },
+    onError: (error) => {
+      toast.error("批量刪除失敗：" + error.message);
+    },
+  });
+
   const toggleLogoMutation = trpc.logos.toggleEnabled.useMutation({
     onSuccess: (data) => {
       toast.success(data.enabled ? "Logo 已啟用" : "Logo 已停用");
