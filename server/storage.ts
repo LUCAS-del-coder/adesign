@@ -83,18 +83,19 @@ export async function storagePut(
     // If custom public URL is configured, use it; otherwise generate a signed URL
     let url: string;
     if (config.publicUrl) {
-      // Use custom public URL
+      // Use custom public URL (no expiration, best option)
       url = `${config.publicUrl.replace(/\/+$/, "")}/${key}`;
       console.log(`[R2] Using custom public URL: ${url}`);
     } else {
-      // Generate a signed URL for accessing the file (valid for 1 year)
-      // This ensures the file is accessible even without public access configured
+      // Generate a signed URL for accessing the file
+      // Note: AWS S3/R2 presigned URLs have a maximum expiration of 7 days (604800 seconds)
+      // For long-term access, configure CLOUDFLARE_R2_PUBLIC_URL with a custom domain
       const getCommand = new GetObjectCommand({
         Bucket: config.bucket,
         Key: key,
       });
-      url = await getSignedUrl(client, getCommand, { expiresIn: 31536000 }); // 1 year
-      console.log(`[R2] Generated signed URL (expires in 1 year)`);
+      url = await getSignedUrl(client, getCommand, { expiresIn: 604800 }); // 7 days (maximum allowed)
+      console.log(`[R2] Generated signed URL (expires in 7 days)`);
     }
 
     return { key, url };
@@ -109,16 +110,20 @@ export async function storagePut(
 /**
  * Get a signed URL for downloading a file from R2
  * @param relKey - Relative key/path for the file
- * @param expiresIn - URL expiration time in seconds (default: 1 hour)
+ * @param expiresIn - URL expiration time in seconds (default: 7 days, max: 604800)
  * @returns Object with key and signed URL
  */
 export async function storageGet(
   relKey: string,
-  expiresIn: number = 3600
+  expiresIn: number = 604800 // Default to 7 days (maximum allowed)
 ): Promise<{ key: string; url: string }> {
   const config = getStorageConfig();
   const client = getR2Client();
   const key = normalizeKey(relKey);
+
+  // Ensure expiresIn doesn't exceed 7 days (604800 seconds)
+  const maxExpiresIn = 604800;
+  const actualExpiresIn = Math.min(expiresIn, maxExpiresIn);
 
   const command = new GetObjectCommand({
     Bucket: config.bucket,
@@ -127,7 +132,7 @@ export async function storageGet(
 
   try {
     // Generate a presigned URL
-    const url = await getSignedUrl(client, command, { expiresIn });
+    const url = await getSignedUrl(client, command, { expiresIn: actualExpiresIn });
     return { key, url };
   } catch (error) {
     console.error("[R2] Get signed URL failed:", error);
