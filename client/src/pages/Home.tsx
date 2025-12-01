@@ -38,7 +38,6 @@ export default function Home() {
   const [previewIndex, setPreviewIndex] = useState<number>(-1);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [showAllAds, setShowAllAds] = useState(false);
-  const [countryFilter, setCountryFilter] = useState<string>("all");
   const [generationProgress, setGenerationProgress] = useState(0);
   const [selectedImageIds, setSelectedImageIds] = useState<Set<number>>(new Set());
 
@@ -59,18 +58,6 @@ export default function Home() {
 
   const selectedAd = originalAds.find(ad => ad.id === selectedOriginalId);
   const selectedGeneratedAds = generatedAds.filter(ad => ad.originalAdId === selectedOriginalId);
-
-  // 篩選生成的廣告圖（根據國家）
-  const filteredGeneratedAds = generatedAds.filter(ad => {
-    if (countryFilter === "all") return true;
-    
-    // 找到對應的原始廣告圖
-    const originalAd = originalAds.find(orig => orig.id === ad.originalAdId);
-    if (!originalAd) return true; // 如果找不到原始圖，顯示它
-    
-    // 比對國家
-    return originalAd.country === countryFilter;
-  });
 
   // Mutations
   const uploadOriginalMutation = trpc.originalAds.upload.useMutation({
@@ -354,6 +341,32 @@ export default function Home() {
       document.body.removeChild(a);
       toast.info("已在新標籤頁打開圖片，請右鍵保存");
     }
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedImageIds.size === 0) {
+      toast.error("請先選擇要下載的圖片");
+      return;
+    }
+
+    const selectedAds = generatedAds.filter(ad => selectedImageIds.has(ad.id));
+    toast.info(`開始下載 ${selectedAds.length} 張圖片...`);
+
+    // 逐一下載，每次延遲 300ms 避免瀏覽器阻止多個下載
+    for (let i = 0; i < selectedAds.length; i++) {
+      const ad = selectedAds[i];
+      try {
+        await handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
+        // 延遲 300ms 再下載下一張
+        if (i < selectedAds.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+      } catch (error) {
+        console.error(`[BatchDownload] Failed to download image ${ad.id}:`, error);
+      }
+    }
+
+    toast.success(`已開始下載 ${selectedAds.length} 張圖片`);
   };
 
   if (loading) {
@@ -640,77 +653,57 @@ export default function Home() {
                   圖片庫
                 </CardTitle>
                 <CardDescription className="text-sm">
-                  所有生成的廣告圖變體（共 {generatedAds.length} 張，篩選後 {filteredGeneratedAds.length} 張）
+                  所有生成的廣告圖變體（共 {generatedAds.length} 張）
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* 國家篩選器和批量操作 */}
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm font-medium">篩選國家：</label>
-                    <select
-                      className="px-3 py-2 border border-border/50 rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                      value={countryFilter}
-                      onChange={(e) => setCountryFilter(e.target.value)}
+                {/* 批量操作 */}
+                {selectedImageIds.size > 0 && (
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      已選擇 {selectedImageIds.size} 張
+                    </span>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleBatchDownload}
                     >
-                      <option value="all">全部國家</option>
-                      <option value="TW">台灣</option>
-                      <option value="CN">中國</option>
-                      <option value="HK">香港</option>
-                      <option value="SG">新加坡</option>
-                      <option value="MY">馬來西亞</option>
-                      <option value="TH">泰國</option>
-                      <option value="VN">越南</option>
-                      <option value="ID">印尼</option>
-                      <option value="PH">菲律賓</option>
-                      <option value="KH">柬埔寨</option>
-                      <option value="MM">緬甸</option>
-                      <option value="US">美國</option>
-                      <option value="JP">日本</option>
-                      <option value="KR">韓國</option>
-                      <option value="OTHER">其他</option>
-                    </select>
+                      <Download className="w-4 h-4 mr-1" />
+                      批量下載
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`確定要刪除 ${selectedImageIds.size} 張圖片嗎？此操作無法復原。`)) {
+                          deleteBatchMutation.mutate({ ids: Array.from(selectedImageIds) });
+                        }
+                      }}
+                      disabled={deleteBatchMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      批量刪除
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedImageIds(new Set())}
+                    >
+                      取消選擇
+                    </Button>
                   </div>
-                  
-                  {selectedImageIds.size > 0 && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        已選擇 {selectedImageIds.size} 張
-                      </span>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm(`確定要刪除 ${selectedImageIds.size} 張圖片嗎？此操作無法復原。`)) {
-                            deleteBatchMutation.mutate({ ids: Array.from(selectedImageIds) });
-                          }
-                        }}
-                        disabled={deleteBatchMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" />
-                        批量刪除
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedImageIds(new Set())}
-                      >
-                        取消選擇
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* 圖片庫內容 */}
                 <div>
-                {filteredGeneratedAds.length === 0 ? (
+                {generatedAds.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p>{generatedAds.length === 0 ? "尚未生成任何圖片" : "沒有符合篩選條件的圖片"}</p>
+                    <p>尚未生成任何圖片</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    {filteredGeneratedAds.map((ad) => {
+                    {generatedAds.map((ad) => {
                       const isSelected = selectedImageIds.has(ad.id);
                       return (
                         <div 
@@ -746,7 +739,7 @@ export default function Home() {
                             alt="Generated"
                             className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
                             onClick={() => {
-                              const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
+                              const index = generatedAds.findIndex(a => a.id === ad.id);
                               setPreviewIndex(index);
                               setPreviewImage(ad.fileUrl);
                             }}
@@ -757,7 +750,7 @@ export default function Home() {
                               variant="secondary"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const index = filteredGeneratedAds.findIndex(a => a.id === ad.id);
+                                const index = generatedAds.findIndex(a => a.id === ad.id);
                                 setPreviewIndex(index);
                                 setPreviewImage(ad.fileUrl);
                               }}
