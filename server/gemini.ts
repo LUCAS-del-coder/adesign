@@ -415,25 +415,63 @@ export async function generateImageWithGemini(
       throw new Error("未能從 Gemini 回應中提取圖片數據");
     }
 
-    console.log("[Gemini] 圖片生成成功");
-    return Buffer.from(generatedImageData, "base64");
-  } catch (error: any) {
-    console.error("[Gemini] 圖片生成錯誤:", {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-    });
-    
-    // 輸出完整的錯誤回應
-    if (error.response?.data) {
-      console.error("[Gemini] API 錯誤回應:", JSON.stringify(error.response.data, null, 2));
-    } else {
-      console.error("[Gemini] 無 API 回應數據");
+      console.log("[Gemini] 圖片生成成功");
+      return Buffer.from(generatedImageData, "base64");
+    } catch (error: any) {
+      lastError = error;
+      console.error(`[Gemini] 圖片生成錯誤 (嘗試 ${attempt}/${maxRetries}):`, {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+      
+      // 輸出完整的錯誤回應
+      if (error.response?.data) {
+        console.error("[Gemini] API 錯誤回應:", JSON.stringify(error.response.data, null, 2));
+      } else {
+        console.error("[Gemini] 無 API 回應數據");
+      }
+      
+      // 如果是配額超限錯誤 (429)，嘗試重試
+      if (error.response?.status === 429 && attempt < maxRetries) {
+        const retryDelay = extractRetryDelay(error);
+        console.log(`[Gemini] 配額超限，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        await sleep(retryDelay);
+        continue; // 重試
+      }
+      
+      // 如果是其他可重試的錯誤（網絡錯誤、超時等），且還有重試次數
+      if (
+        (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') &&
+        attempt < maxRetries
+      ) {
+        const retryDelay = 5 * attempt; // 指數退避：5秒、10秒、15秒
+        console.log(`[Gemini] 網絡錯誤，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        await sleep(retryDelay);
+        continue; // 重試
+      }
+      
+      // 如果是最後一次嘗試或不可重試的錯誤，拋出錯誤
+      let errorMessage = "圖片生成失敗";
+      if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        errorMessage += ": 請求超時，請稍後再試";
+      } else if (error.response?.status === 429) {
+        const retryDelay = extractRetryDelay(error);
+        errorMessage += `: API 請求配額已用盡。請等待 ${retryDelay} 秒後再試，或升級您的 Gemini API 計劃`;
+      } else if (error.response?.status === 400) {
+        errorMessage += ": " + (error.response?.data?.error?.message || "請求參數錯誤");
+      } else if (error.response?.data?.error?.message) {
+        errorMessage += ": " + error.response.data.error.message;
+      } else {
+        errorMessage += ": " + error.message;
+      }
+      
+      throw new Error(`圖片生成失敗: ${errorMessage}`);
     }
-    
-    const errorMessage = error.message || "未知錯誤";
-    throw new Error(`圖片生成失敗: ${errorMessage}`);
   }
+  
+  // 如果所有重試都失敗了
+  throw lastError || new Error("圖片生成失敗：所有重試都失敗了");
 }
 
 /**
