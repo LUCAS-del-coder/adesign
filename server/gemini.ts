@@ -299,9 +299,22 @@ export async function generateImageWithGemini(
     referenceImages?: string[];
   },
   apiKey: string,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  preferredModels?: string[] // 添加模型列表參數，用於自動降級
 ): Promise<Buffer> {
   let lastError: any = null;
+  
+  // 定義模型優先級列表（如果沒有傳入）
+  const modelList = preferredModels || [
+    process.env.GEMINI_IMAGE_MODEL,
+    "gemini-3-pro-image",
+    "gemini-3.0-pro-image", 
+    "gemini-3-pro-image-preview",
+    "gemini-2.5-flash-image",
+  ].filter(Boolean) as string[];
+  
+  // 使用傳入的模型列表，選擇第一個可用的模型
+  const modelName = modelList[0] || "gemini-2.5-flash-image";
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
