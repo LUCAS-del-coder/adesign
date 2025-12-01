@@ -286,12 +286,18 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (url: string, filename: string) => {
+  const handleDownload = async (url: string, filename: string, event?: React.MouseEvent) => {
+    // 阻止事件冒泡，防止觸發預覽
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
     try {
       console.log('[Download] Starting download:', filename);
       console.log('[Download] URL:', url);
       
-      // 使用 fetch 下載圖片並轉換為 blob，避免 CORS 問題
+      // 使用 fetch 下載圖片並轉換為 blob
       const response = await fetch(url, {
         mode: 'cors',
         credentials: 'omit',
@@ -299,8 +305,38 @@ export default function Home() {
       });
       
       if (!response.ok) {
-        // 如果 CORS 失敗，嘗試使用備用方案
-        console.warn('[Download] Direct download failed, trying alternative method');
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // 創建下載連結並觸發下載
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = blobUrl;
+      a.download = filename;
+      a.setAttribute('download', filename); // 確保下載屬性設置
+      document.body.appendChild(a);
+      
+      // 使用 setTimeout 確保 DOM 已更新
+      setTimeout(() => {
+        a.click();
+        document.body.removeChild(a);
+        
+        // 清理 blob URL
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl);
+        }, 100);
+      }, 0);
+      
+      toast.success("下載成功");
+    } catch (error) {
+      console.error('[Download] Error:', error);
+      toast.error(`下載失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+      
+      // 如果下載失敗，提供備用方案：在新標籤頁打開
+      try {
         const a = document.createElement('a');
         a.href = url;
         a.target = '_blank';
@@ -309,37 +345,9 @@ export default function Home() {
         a.click();
         document.body.removeChild(a);
         toast.info("已在新標籤頁打開圖片，請右鍵保存");
-        return;
+      } catch (fallbackError) {
+        console.error('[Download] Fallback also failed:', fallbackError);
       }
-      
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // 創建下載連結
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // 清理 blob URL
-      setTimeout(() => {
-        window.URL.revokeObjectURL(blobUrl);
-      }, 100);
-      
-      toast.success("下載成功");
-    } catch (error) {
-      console.error('[Download] Error:', error);
-      // 如果所有方法都失敗，提供備用方案
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.info("已在新標籤頁打開圖片，請右鍵保存");
     }
   };
 
@@ -352,14 +360,14 @@ export default function Home() {
     const selectedAds = generatedAds.filter(ad => selectedImageIds.has(ad.id));
     toast.info(`開始下載 ${selectedAds.length} 張圖片...`);
 
-    // 逐一下載，每次延遲 300ms 避免瀏覽器阻止多個下載
+    // 逐一下載，每次延遲 500ms 避免瀏覽器阻止多個下載
     for (let i = 0; i < selectedAds.length; i++) {
       const ad = selectedAds[i];
       try {
         await handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
-        // 延遲 300ms 再下載下一張
+        // 延遲 500ms 再下載下一張
         if (i < selectedAds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       } catch (error) {
         console.error(`[BatchDownload] Failed to download image ${ad.id}:`, error);
@@ -762,8 +770,9 @@ export default function Home() {
                               size="sm"
                               variant="secondary"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
+                                handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
                               }}
                             >
                               <Download className="w-4 h-4 mr-1" />
@@ -985,9 +994,10 @@ export default function Home() {
                 variant="default"
                 className="shadow-lg"
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   const ad = generatedAds[previewIndex];
-                  if (ad) handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
+                  if (ad) handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
