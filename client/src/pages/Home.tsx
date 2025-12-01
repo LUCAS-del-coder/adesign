@@ -261,6 +261,13 @@ export default function Home() {
         toast.error(`生成失敗: ${errorMessage}`);
         console.error("[Generate] Error in handleGenerateVariants:", error);
       }
+    } catch (error: any) {
+      // 外層錯誤處理（分析階段失敗等）
+      setGenerationProgress(0);
+      const errorMessage = error?.message || "操作失敗";
+      toast.error(`錯誤: ${errorMessage}`);
+      console.error("[Generate] Outer error in handleGenerateVariants:", error);
+    }
   };
 
   const handleDownload = async (url: string, filename: string) => {
