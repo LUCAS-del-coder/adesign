@@ -209,12 +209,12 @@ export async function generateImageWithGemini(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-    const {
-      prompt,
-      aspectRatio = "1:1",
-      imageSize = "2K",
-      referenceImages = [],
-    } = options;
+      const {
+        prompt,
+        aspectRatio = "1:1",
+        imageSize = "2K",
+        referenceImages = [],
+      } = options;
 
     // 準備請求內容
     const parts: any[] = [{ text: prompt }];
