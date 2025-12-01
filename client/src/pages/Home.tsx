@@ -260,6 +260,12 @@ export default function Home() {
         const errorMessage = error?.message || "生成失敗，請檢查 Railway 日誌";
         toast.error(`生成失敗: ${errorMessage}`);
         console.error("[Generate] Error in handleGenerateVariants:", error);
+        throw error; // 重新拋出錯誤，讓外層 catch 處理
+      } finally {
+        // 確保進度 interval 被清理
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
       }
     } catch (error: any) {
       // 外層錯誤處理（分析階段失敗等）
