@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { execSync } from "child_process";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -27,7 +28,22 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
+async function runMigrations() {
+  try {
+    console.log("[Migration] Running database migrations...");
+    execSync("pnpm db:migrate", { stdio: "inherit", env: process.env });
+    console.log("[Migration] Migrations completed successfully");
+  } catch (error) {
+    console.error("[Migration] Failed to run migrations:", error);
+    // Don't exit - let the app start anyway, migrations can be run manually
+    console.warn("[Migration] Continuing without migrations. Run 'pnpm db:migrate' manually if needed.");
+  }
+}
+
 async function startServer() {
+  // Run migrations before starting the server
+  await runMigrations();
+  
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

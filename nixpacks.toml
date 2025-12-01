@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_18", "pnpm-9_x", "openssl"]
 cmds = ["npm install -g corepack@0.24.1 && corepack enable", "pnpm i --no-frozen-lockfile"]
 
 [phases.build]
-cmds = ["pnpm build", "pnpm db:migrate"]
+cmds = ["pnpm build"]
 
 [start]
 cmd = "pnpm start"
