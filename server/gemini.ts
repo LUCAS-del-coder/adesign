@@ -828,7 +828,85 @@ VERIFICATION: Before generating, ask: "Is this the MOST DIFFERENT? Is it only 40
         ? `\n\n=== MANDATORY ENGLISH TEXTS TO USE (COPY THESE EXACTLY) ===\n\nThe following English texts MUST appear in the generated image. Use these EXACT texts - do not modify, do not translate, do not change:\n\n${mandatoryEnglishTexts}\n\nCRITICAL: These are the ONLY texts that should appear in the image. Do NOT add any other text. Do NOT use any non-English characters.`
         : `\n\n=== MANDATORY TEXT REQUIREMENTS ===\n\n⚠️ CRITICAL: The analysis above contains text elements. You MUST:\n1. Find ALL text elements mentioned in the description\n2. Use ONLY their English translations\n3. Do NOT use any original non-English text\n4. Every single character in the image must be English`;
 
-      const prompt = `Create a high-quality advertisement image based on the following description:\n\n${analysisPrompt}\n\n${variationPrompt}${textRequirementsSection}\n\n=== ABSOLUTE MANDATORY TEXT REQUIREMENTS (ZERO TOLERANCE) ===\n\n🚫 CRITICAL RULES - NO EXCEPTIONS:\n1. ALL text in the generated image MUST be in ENGLISH ONLY\n2. ZERO tolerance for ANY non-English characters (Chinese, Japanese, Korean, Arabic, etc.)\n3. If the description mentions any non-English text, you MUST use its English translation\n4. Every single character, word, and sentence must be English\n5. Do NOT mix languages - it's either ALL English or the image is UNUSABLE\n\n📋 TEXT USAGE PROCESS:\n1. Review the "MANDATORY ENGLISH TEXTS TO USE" section above (if provided)\n2. Use ONLY those exact English texts in the generated image\n3. If no mandatory texts are listed, extract ALL English translations from the description\n4. Place texts in appropriate positions matching the original layout\n5. Before generating, verify: "Will ALL text in this image be English?"\n6. If ANY text might not be English, DO NOT generate - fix it first\n\n✅ TEXT QUALITY REQUIREMENTS:\n- Professional, native English marketing copy\n- Clear, compelling, and professionally written\n- Proper English grammar, spelling, and punctuation\n- High-quality, legible, and properly formatted\n- Maintains advertising impact and persuasive tone\n\n🔍 FINAL VERIFICATION:\nBefore finalizing the image, ask yourself:\n- "Are ALL text elements in English?" → Must be YES\n- "Are there ANY non-English characters?" → Must be NO\n- "Did I use the exact English texts from the mandatory list?" → Must be YES\n\nIf ANY answer is wrong, DO NOT generate the image. Fix it first.\n\n=== END OF TEXT REQUIREMENTS ===\n\nFocus on creating a professional, polished advertisement with EXCEPTIONAL English text quality. The similarity level must be approximately ${similarityConfig.similarity}% as strictly specified above. Remember: The image is UNUSABLE if it contains ANY non-English text.`;
+      const prompt = `You are generating Variation ${i + 1} of 3 advertisement images. Follow ALL requirements EXACTLY.
+
+⚠️ CRITICAL: This is Variation ${i + 1} with ${similarityConfig.similarity}% similarity requirement. You MUST follow the similarity requirements below EXACTLY.
+
+=== ORIGINAL IMAGE DESCRIPTION ===
+${analysisPrompt}
+
+=== VARIATION ${i + 1} REQUIREMENTS (MANDATORY - FOLLOW EXACTLY) ===
+${variationPrompt}
+
+${textRequirementsSection}
+
+=== ABSOLUTE MANDATORY TEXT REQUIREMENTS (ZERO TOLERANCE) ===
+
+🚫 CRITICAL RULES - NO EXCEPTIONS - VIOLATION = UNUSABLE IMAGE:
+1. ALL text in the generated image MUST be in ENGLISH ONLY
+2. ZERO tolerance for ANY non-English characters (Chinese, Japanese, Korean, Arabic, etc.)
+3. If the description mentions any non-English text, you MUST use its English translation
+4. Every single character, word, and sentence must be English
+5. Do NOT mix languages - it's either ALL English or the image is UNUSABLE
+6. If you see ANY non-English text in the description, translate ALL of it to English
+
+📋 TEXT USAGE PROCESS (MANDATORY STEPS):
+1. Review the "MANDATORY ENGLISH TEXTS TO USE" section above (if provided)
+2. Use ONLY those exact English texts in the generated image
+3. If no mandatory texts are listed, extract ALL English translations from the description
+4. Place texts in appropriate positions matching the original layout
+5. Before generating, verify: "Will ALL text in this image be English?"
+6. If ANY text might not be English, DO NOT generate - fix it first
+7. Double-check every text element: "Is this in English?" → Must be YES for ALL
+
+✅ TEXT QUALITY REQUIREMENTS:
+- Professional, native English marketing copy
+- Clear, compelling, and professionally written
+- Proper English grammar, spelling, and punctuation
+- High-quality, legible, and properly formatted
+- Maintains advertising impact and persuasive tone
+
+🔍 FINAL VERIFICATION (MANDATORY BEFORE GENERATING):
+Before finalizing the image, ask yourself:
+- "Are ALL text elements in English?" → Must be YES
+- "Are there ANY non-English characters?" → Must be NO
+- "Did I use the exact English texts from the mandatory list?" → Must be YES
+- "Have I translated ALL non-English text?" → Must be YES
+
+If ANY answer is wrong, DO NOT generate the image. Fix it first.
+
+=== SIMILARITY LEVEL VERIFICATION (MANDATORY) ===
+
+⚠️ CRITICAL: The similarity level must be EXACTLY ${similarityConfig.similarity}% as specified in the variation requirements above.
+
+Before generating, verify:
+- "Does this variation match the ${similarityConfig.similarity}% similarity requirement?" → Must be YES
+- "Have I followed ALL the similarity requirements above EXACTLY?" → Must be YES
+- "Is this variation ${100 - similarityConfig.similarity}% different from the original?" → Must be YES
+- "Will this look ${similarityConfig.similarity}% similar to the original?" → Must be YES
+
+If the similarity level is wrong, adjust your changes to match the requirement EXACTLY.
+
+=== GENERATION INSTRUCTIONS ===
+
+1. Read the original image description carefully
+2. Follow the Variation ${i + 1} requirements EXACTLY (${similarityConfig.similarity}% similarity)
+3. Use ONLY English text (translate ALL non-English text)
+4. Generate the image with the EXACT similarity level specified
+5. Verify both similarity and text requirements before finalizing
+
+=== END OF REQUIREMENTS ===
+
+Generate a professional, polished advertisement image that:
+1. Follows the EXACT ${similarityConfig.similarity}% similarity requirement (CRITICAL)
+2. Contains ONLY English text (ZERO non-English characters) (CRITICAL)
+3. Uses the exact English texts from the mandatory list (if provided)
+4. Maintains high quality and professional appearance
+
+Remember: The image is UNUSABLE if:
+- It contains ANY non-English text
+- The similarity level does not match ${similarityConfig.similarity}% EXACTLY
+- It does not follow the variation requirements above`;
 
       console.log(`[Gemini] 開始生成變體 ${i + 1}/${count}`);
       const imageBuffer = await generateImageWithGemini(
