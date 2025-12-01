@@ -208,12 +208,20 @@ export default function Home() {
         setGenerationProgress(30);
       }
 
+      // 使用更智能的進度更新：根據時間估算，但不會超過 95%
+      // 這樣可以給生成過程更多時間，避免卡在 90%
+      const startTime = Date.now();
+      const estimatedDuration = 120000; // 估計總時長 2 分鐘（120秒）
+      
       const progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const timeBasedProgress = Math.min(95, Math.floor((elapsed / estimatedDuration) * 95));
+        
         setGenerationProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + 5;
+          // 使用時間基礎的進度，但確保不會倒退
+          return Math.max(prev, timeBasedProgress);
         });
-      }, 1000);
+      }, 500); // 每 500ms 更新一次，更流暢
 
       await generateVariantsMutation.mutateAsync({
         originalAdId: selectedOriginalId,
