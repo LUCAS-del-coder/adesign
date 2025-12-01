@@ -305,12 +305,15 @@ export async function generateImageWithGemini(
   let lastError: any = null;
   
   // 定義模型優先級列表（如果沒有傳入）
+  // 注意：根據實際測試，以下模型在 v1beta API 中的可用性：
+  // - gemini-3-pro-image: ❌ 不可用 (404)
+  // - gemini-3.0-pro-image: ❌ 不可用 (404)
+  // - gemini-3-pro-image-preview: ✅ 可用（目前使用）
+  // - gemini-2.5-flash-image: ✅ 可用（穩定版本）
   const modelList = preferredModels || [
-    process.env.GEMINI_IMAGE_MODEL,
-    "gemini-3-pro-image",
-    "gemini-3.0-pro-image", 
-    "gemini-3-pro-image-preview",
-    "gemini-2.5-flash-image",
+    process.env.GEMINI_IMAGE_MODEL, // 用戶自定義（最高優先級）
+    "gemini-3-pro-image-preview", // 直接使用可用的預覽版本
+    "gemini-2.5-flash-image", // 穩定版本作為降級選項
   ].filter(Boolean) as string[];
   
   // 使用傳入的模型列表，選擇第一個可用的模型
@@ -435,7 +438,9 @@ export async function generateImageWithGemini(
         const currentModelIndex = modelList.indexOf(modelName);
         if (currentModelIndex < modelList.length - 1) {
           const fallbackModels = modelList.slice(currentModelIndex + 1);
-          console.warn(`[Gemini] 模型 ${modelName} 不可用，嘗試降級到: ${fallbackModels.join(", ")}`);
+          console.warn(`[Gemini] 模型 ${modelName} 不可用 (404)，原因：模型不存在或不支持圖片生成`);
+          console.warn(`[Gemini] 錯誤詳情: ${errorData?.error?.message || "模型未找到"}`);
+          console.warn(`[Gemini] 嘗試降級到: ${fallbackModels.join(", ")}`);
           // 遞歸調用，使用降級模型列表
           return generateImageWithGemini(
             { ...options },
@@ -443,6 +448,9 @@ export async function generateImageWithGemini(
             maxRetries,
             fallbackModels
           );
+        } else {
+          console.error(`[Gemini] 所有模型都不可用，最後一個模型 ${modelName} 也失敗了`);
+          console.error(`[Gemini] 錯誤: ${errorData?.error?.message || "模型未找到"}`);
         }
       }
       
