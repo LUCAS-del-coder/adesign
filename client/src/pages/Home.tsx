@@ -920,45 +920,51 @@ export default function Home() {
               <X className="w-6 h-6" />
             </Button>
             
-            {/* 上一頁按鈕 */}
-            {previewIndex > 0 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12"
-                onClick={(e) => {
-                  e.stopPropagation();
+            {/* 上一頁按鈕 - 始終顯示，但禁用時變灰 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`absolute left-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12 ${
+                previewIndex <= 0 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (previewIndex > 0) {
                   const prevIndex = previewIndex - 1;
-                  const prevAd = filteredGeneratedAds[prevIndex];
+                  const prevAd = generatedAds[prevIndex];
                   if (prevAd) {
                     setPreviewIndex(prevIndex);
                     setPreviewImage(prevAd.fileUrl);
                   }
-                }}
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </Button>
-            )}
+                }
+              }}
+              disabled={previewIndex <= 0}
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </Button>
             
-            {/* 下一頁按鈕 */}
-            {previewIndex < filteredGeneratedAds.length - 1 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12"
-                onClick={(e) => {
-                  e.stopPropagation();
+            {/* 下一頁按鈕 - 始終顯示，但禁用時變灰 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`absolute right-4 top-1/2 -translate-y-1/2 bg-background/90 hover:bg-background border border-border/50 shadow-lg z-10 w-12 h-12 ${
+                previewIndex >= generatedAds.length - 1 ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (previewIndex < generatedAds.length - 1) {
                   const nextIndex = previewIndex + 1;
-                  const nextAd = filteredGeneratedAds[nextIndex];
+                  const nextAd = generatedAds[nextIndex];
                   if (nextAd) {
                     setPreviewIndex(nextIndex);
                     setPreviewImage(nextAd.fileUrl);
                   }
-                }}
-              >
-                <ChevronRight className="w-6 h-6" />
-              </Button>
-            )}
+                }
+              }}
+              disabled={previewIndex >= generatedAds.length - 1}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </Button>
             
             <img
               src={previewImage}
@@ -970,7 +976,7 @@ export default function Home() {
             {/* 圖片索引指示器 */}
             <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-background/90 px-4 py-2 rounded-lg border border-border/50 shadow-lg z-10">
               <span className="text-sm font-medium">
-                {previewIndex + 1} / {filteredGeneratedAds.length}
+                {previewIndex + 1} / {generatedAds.length}
               </span>
             </div>
             
@@ -980,7 +986,7 @@ export default function Home() {
                 className="shadow-lg"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const ad = filteredGeneratedAds[previewIndex];
+                  const ad = generatedAds[previewIndex];
                   if (ad) handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
                 }}
               >
