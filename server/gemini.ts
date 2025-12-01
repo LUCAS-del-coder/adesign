@@ -1,13 +1,60 @@
 import axios from "axios";
 
 /**
- * 分析圖片並生成描述提示詞
+ * 從錯誤回應中提取重試延遲時間（秒）
+ */
+function extractRetryDelay(error: any): number {
+  try {
+    // 檢查 RetryInfo
+    const retryInfo = error.response?.data?.error?.details?.find(
+      (detail: any) => detail["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
+    );
+    if (retryInfo?.retryDelay) {
+      // retryDelay 可能是字符串格式 "40s" 或對象
+      const delay = retryInfo.retryDelay;
+      if (typeof delay === "string") {
+        const seconds = parseInt(delay.replace("s", ""));
+        return isNaN(seconds) ? 60 : seconds;
+      } else if (typeof delay === "number") {
+        return delay;
+      } else if (delay.seconds) {
+        return parseInt(delay.seconds) || 60;
+      }
+    }
+    
+    // 檢查錯誤訊息中的重試時間
+    const message = error.response?.data?.error?.message || error.message || "";
+    const match = message.match(/retry in ([\d.]+)s/i);
+    if (match) {
+      return Math.ceil(parseFloat(match[1])) + 5; // 加 5 秒緩衝
+    }
+  } catch (e) {
+    // 忽略解析錯誤
+  }
+  
+  // 默認重試延遲：60 秒
+  return 60;
+}
+
+/**
+ * 延遲函數
+ */
+function sleep(seconds: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+}
+
+/**
+ * 分析圖片並生成描述提示詞（帶重試邏輯）
  */
 export async function analyzeImageWithGemini(
   imageUrl: string,
-  apiKey: string
+  apiKey: string,
+  maxRetries: number = 3
 ): Promise<string> {
-  try {
+  let lastError: any = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
     console.log("[Gemini] 開始分析圖片:", imageUrl);
     
     // 下載圖片並轉換為 base64
@@ -91,36 +138,62 @@ Provide a detailed but concise description suitable for generating similar adver
       throw new Error("無法從 Gemini 回應中提取分析結果");
     }
     
-    console.log("[Gemini] 分析成功, 提示詞長度:", analysisText.length);
-    return analysisText;
-  } catch (error: any) {
-    console.error("[Gemini] 圖片分析錯誤:", {
-      message: error.message,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-    });
-    
-    if (error.response?.data) {
-      console.error("[Gemini] API 錯誤回應:", JSON.stringify(error.response.data, null, 2));
+      console.log("[Gemini] 分析成功, 提示詞長度:", analysisText.length);
+      return analysisText;
+    } catch (error: any) {
+      lastError = error;
+      console.error(`[Gemini] 圖片分析錯誤 (嘗試 ${attempt}/${maxRetries}):`, {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      });
+      
+      if (error.response?.data) {
+        console.error("[Gemini] API 錯誤回應:", JSON.stringify(error.response.data, null, 2));
+      }
+      
+      // 如果是配額超限錯誤 (429)，嘗試重試
+      if (error.response?.status === 429 && attempt < maxRetries) {
+        const retryDelay = extractRetryDelay(error);
+        console.log(`[Gemini] 配額超限，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        await sleep(retryDelay);
+        continue; // 重試
+      }
+      
+      // 如果是其他可重試的錯誤（網絡錯誤、超時等），且還有重試次數
+      if (
+        (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ECONNRESET') &&
+        attempt < maxRetries
+      ) {
+        const retryDelay = 5 * attempt; // 指數退避：5秒、10秒、15秒
+        console.log(`[Gemini] 網絡錯誤，等待 ${retryDelay} 秒後重試 (${attempt}/${maxRetries})...`);
+        await sleep(retryDelay);
+        continue; // 重試
+      }
+      
+      // 如果是最後一次嘗試或不可重試的錯誤，拋出錯誤
+      let errorMessage = "圖片分析失敗";
+      if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+        errorMessage += ": 請求超時，請稍後再試";
+      } else if (error.response?.status === 429) {
+        const retryDelay = extractRetryDelay(error);
+        errorMessage += `: API 請求配額已用盡。請等待 ${retryDelay} 秒後再試，或升級您的 Gemini API 計劃`;
+      } else if (error.response?.data?.error?.message) {
+        errorMessage += ": " + error.response.data.error.message;
+      } else {
+        errorMessage += ": " + error.message;
+      }
+      
+      throw new Error(errorMessage);
     }
-    
-    let errorMessage = "圖片分析失敗";
-    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
-      errorMessage += ": 請求超時，請稍後再試";
-    } else if (error.response?.status === 429) {
-      errorMessage += ": API 請求配額已用盡，請稍後再試";
-    } else if (error.response?.data?.error?.message) {
-      errorMessage += ": " + error.response.data.error.message;
-    } else {
-      errorMessage += ": " + error.message;
-    }
-    
-    throw new Error(errorMessage);
   }
+  
+  // 如果所有重試都失敗了
+  throw lastError || new Error("圖片分析失敗：所有重試都失敗了");
 }
 
 /**
- * 使用 Gemini API 生成圖片（根據 Cursor 建議改進版本）
+ * 使用 Gemini API 生成圖片（根據 Cursor 建議改進版本，帶重試邏輯）
  */
 export async function generateImageWithGemini(
   options: {
@@ -129,9 +202,13 @@ export async function generateImageWithGemini(
     imageSize?: string;
     referenceImages?: string[];
   },
-  apiKey: string
+  apiKey: string,
+  maxRetries: number = 3
 ): Promise<Buffer> {
-  try {
+  let lastError: any = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
     const {
       prompt,
       aspectRatio = "1:1",
@@ -239,17 +316,25 @@ export async function generateImageWithGemini(
     // ✅ 手動檢查狀態碼
     if (response.status >= 400) {
       const errorData = response.data;
-      console.error("[Gemini] API 返回錯誤狀態:", response.status);
+      console.error(`[Gemini] API 返回錯誤狀態 (嘗試 ${attempt}/${maxRetries}):`, response.status);
       console.error("[Gemini] 錯誤數據:", JSON.stringify(errorData, null, 2));
       
+      // 創建錯誤對象以便重試邏輯處理
+      const error: any = new Error(`API 錯誤 (${response.status})`);
+      error.response = { status: response.status, data: errorData };
+      
+      // 如果是配額超限錯誤 (429)，讓外層重試邏輯處理
+      if (response.status === 429) {
+        throw error;
+      }
+      
+      // 其他錯誤直接拋出（不重試）
       if (response.status === 400) {
         throw new Error(`API 請求錯誤 (400): ${errorData?.error?.message || "請求參數錯誤"}`);
       } else if (response.status === 403) {
         throw new Error(`API 權限錯誤 (403): ${errorData?.error?.message || "API 金鑰無權限或模型不可用"}`);
       } else if (response.status === 404) {
         throw new Error(`API 端點錯誤 (404): ${errorData?.error?.message || "模型不存在"}`);
-      } else if (response.status === 429) {
-        throw new Error(`API 配額超限 (429): ${errorData?.error?.message || "請求配額已用盡"}`);
       } else {
         throw new Error(`API 錯誤 (${response.status}): ${errorData?.error?.message || "未知錯誤"}`);
       }
