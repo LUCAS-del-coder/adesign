@@ -394,15 +394,10 @@ export async function generateImageWithGemini(
     console.log("[Gemini] 請求體結構:", JSON.stringify(requestBodyForLog, null, 2));
 
     // ✅ 修復 4: API 錯誤處理完善
-    // 支持通過環境變量配置模型名稱，默認使用 gemini-2.5-flash-image
-    // 可以嘗試的模型：
-    // - gemini-2.5-flash-image (穩定版本)
-    // - gemini-3-pro-image (如果可用)
-    // - gemini-3.0-pro-image (如果可用)
-    // - gemini-2.5-flash-image-exp-001 (實驗版本，可能不可用)
-    const modelName = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+    // 使用傳入的模型列表，選擇第一個可用的模型
+    const modelName = modelList[0] || "gemini-2.5-flash-image";
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
-    console.log(`[Gemini] 使用模型: ${modelName}`);
+    console.log(`[Gemini] 嘗試使用模型: ${modelName} (${modelList.length} 個候選模型)`);
     console.log("[Gemini] 調用 API:", apiUrl);
 
     const response = await axios.post(
@@ -422,6 +417,22 @@ export async function generateImageWithGemini(
       const errorData = response.data;
       console.error(`[Gemini] API 返回錯誤狀態 (嘗試 ${attempt}/${maxRetries}):`, response.status);
       console.error("[Gemini] 錯誤數據:", JSON.stringify(errorData, null, 2));
+      
+      // 如果是 404 錯誤（模型不存在），嘗試降級到更穩定的模型
+      if (response.status === 404 && attempt === 1 && modelList.length > 1) {
+        const currentModelIndex = modelList.indexOf(modelName);
+        if (currentModelIndex < modelList.length - 1) {
+          const fallbackModels = modelList.slice(currentModelIndex + 1);
+          console.warn(`[Gemini] 模型 ${modelName} 不可用，嘗試降級到: ${fallbackModels.join(", ")}`);
+          // 遞歸調用，使用降級模型列表
+          return generateImageWithGemini(
+            { ...options },
+            apiKey,
+            maxRetries,
+            fallbackModels
+          );
+        }
+      }
       
       // 創建錯誤對象以便重試邏輯處理
       const error: any = new Error(`API 錯誤 (${response.status})`);
