@@ -1,102 +1,131 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
-
+// Cloudflare R2 storage implementation (S3-compatible)
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ENV } from './_core/env';
 
-type StorageConfig = { baseUrl: string; apiKey: string };
+type StorageConfig = {
+  accountId: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicUrl?: string; // Public URL for accessing files (e.g., custom domain or R2.dev URL)
+};
 
 function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
+  // Cloudflare R2 configuration
+  const accountId = ENV.cloudflareAccountId || process.env.CLOUDFLARE_ACCOUNT_ID || "";
+  const bucket = ENV.cloudflareBucket || process.env.CLOUDFLARE_R2_BUCKET || "";
+  const accessKeyId = ENV.cloudflareAccessKeyId || process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || "";
+  const secretAccessKey = ENV.cloudflareSecretAccessKey || process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || "";
+  const publicUrl = ENV.cloudflarePublicUrl || process.env.CLOUDFLARE_R2_PUBLIC_URL || "";
 
-  if (!baseUrl || !apiKey) {
+  if (!accountId || !bucket || !accessKeyId || !secretAccessKey) {
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      "Cloudflare R2 credentials missing: set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_R2_BUCKET, CLOUDFLARE_R2_ACCESS_KEY_ID, and CLOUDFLARE_R2_SECRET_ACCESS_KEY environment variables"
     );
   }
 
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
+  return { accountId, bucket, accessKeyId, secretAccessKey, publicUrl };
 }
 
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
+function getR2Client(): S3Client {
+  const config = getStorageConfig();
+  
+  // Cloudflare R2 uses S3-compatible API with custom endpoint
+  const endpoint = `https://${config.accountId}.r2.cloudflarestorage.com`;
+  
+  return new S3Client({
+    region: "auto", // R2 uses "auto" as region
+    endpoint,
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+    forcePathStyle: true, // R2 requires path-style addressing
   });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
 }
 
 function normalizeKey(relKey: string): string {
   return relKey.replace(/^\/+/, "");
 }
 
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
-}
-
+/**
+ * Upload a file to Cloudflare R2
+ * @param relKey - Relative key/path for the file (e.g., "user123/image.png")
+ * @param data - File data as Buffer, Uint8Array, or string
+ * @param contentType - MIME type of the file
+ * @returns Object with key and public URL
+ */
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+  const config = getStorageConfig();
+  const client = getR2Client();
   const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
+
+  // Convert string to Buffer if needed
+  const body = typeof data === "string" ? Buffer.from(data, "utf-8") : data;
+
+  const command = new PutObjectCommand({
+    Bucket: config.bucket,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
   });
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
+  try {
+    await client.send(command);
+
+    // Return public URL
+    // If custom public URL is configured, use it; otherwise use R2.dev URL
+    let url: string;
+    if (config.publicUrl) {
+      url = `${config.publicUrl.replace(/\/+$/, "")}/${key}`;
+    } else {
+      // Use R2.dev public URL format: https://pub-<hash>.r2.dev/<key>
+      // Note: This requires the bucket to have a public domain configured
+      // For production, you should set up a custom domain via Cloudflare
+      url = `https://${config.bucket}.r2.dev/${key}`;
+    }
+
+    return { key, url };
+  } catch (error) {
+    console.error("[R2] Upload failed:", error);
     throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
+      `R2 upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
-  const url = (await response.json()).url;
-  return { key, url };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+/**
+ * Get a signed URL for downloading a file from R2
+ * @param relKey - Relative key/path for the file
+ * @param expiresIn - URL expiration time in seconds (default: 1 hour)
+ * @returns Object with key and signed URL
+ */
+export async function storageGet(
+  relKey: string,
+  expiresIn: number = 3600
+): Promise<{ key: string; url: string }> {
+  const config = getStorageConfig();
+  const client = getR2Client();
   const key = normalizeKey(relKey);
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
+
+  const command = new GetObjectCommand({
+    Bucket: config.bucket,
+    Key: key,
+  });
+
+  try {
+    // Generate a presigned URL
+    const url = await getSignedUrl(client, command, { expiresIn });
+    return { key, url };
+  } catch (error) {
+    console.error("[R2] Get signed URL failed:", error);
+    throw new Error(
+      `R2 get signed URL failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
 }

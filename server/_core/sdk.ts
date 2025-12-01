@@ -30,12 +30,9 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
-    if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
-    }
+    // This service is deprecated - using Google OAuth instead
+    // Completely silent - no logging, no errors
+    // This constructor should never be called in production
   }
 
   private decodeState(state: string): string {
@@ -76,19 +73,36 @@ class OAuthService {
   }
 }
 
-const createOAuthHttpClient = (): AxiosInstance =>
-  axios.create({
-    baseURL: ENV.oAuthServerUrl,
+const createOAuthHttpClient = (): AxiosInstance => {
+  // This is deprecated - using Google OAuth instead
+  // Return a dummy client that won't be used
+  // Don't access ENV.oAuthServerUrl here to prevent errors
+  return axios.create({
+    baseURL: "https://deprecated",
     timeout: AXIOS_TIMEOUT_MS,
   });
+};
 
 class SDKServer {
   private readonly client: AxiosInstance;
   private readonly oauthService: OAuthService;
 
-  constructor(client: AxiosInstance = createOAuthHttpClient()) {
-    this.client = client;
-    this.oauthService = new OAuthService(this.client);
+  constructor(client?: AxiosInstance) {
+    // Lazy create client only if needed
+    this.client = client || createOAuthHttpClient();
+    // Only create OAuthService if oAuthServerUrl is configured
+    // This prevents errors when SDK is not being used
+    // Since we're using Google OAuth now, this should never be created
+    if (ENV.oAuthServerUrl) {
+      this.oauthService = new OAuthService(this.client);
+    } else {
+      // Don't create OAuthService at all - it's deprecated
+      // Create a minimal stub that won't cause errors
+      this.oauthService = {
+        getTokenByCode: async () => { throw new Error("Deprecated"); },
+        getUserInfoByToken: async () => { throw new Error("Deprecated"); },
+      } as any;
+    }
   }
 
   private deriveLoginMethod(
@@ -301,4 +315,45 @@ class SDKServer {
   }
 }
 
-export const sdk = new SDKServer();
+// SDK is deprecated - using Google OAuth instead
+// This file is kept for backward compatibility but should not be used
+// All OAuth functionality has been moved to server/_core/oauth.ts and server/_core/auth.ts
+
+// Lazy initialization to prevent errors when module is loaded
+let _sdkInstance: SDKServer | null = null;
+
+function getSDKInstance(): SDKServer {
+  if (!_sdkInstance) {
+    // Only create if oAuthServerUrl is configured (for backward compatibility)
+    if (ENV.oAuthServerUrl) {
+      _sdkInstance = new SDKServer();
+    } else {
+      // Return a minimal dummy instance that won't cause errors
+      _sdkInstance = {
+        authenticateRequest: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+        exchangeCodeForToken: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+        getUserInfo: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+        createSessionToken: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+        verifySession: async () => null,
+        signSession: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+        getUserInfoWithJwt: async () => { throw new Error("SDK not configured - using Google OAuth instead"); },
+      } as any;
+    }
+  }
+  return _sdkInstance;
+}
+
+// Export as a getter to prevent immediate instantiation on module load
+// This prevents the OAuthService constructor from running when module is imported
+// Only create instance when actually accessed (lazy initialization)
+export const sdk = new Proxy({} as SDKServer, {
+  get(_target, prop) {
+    // Only create instance when actually accessed
+    const instance = getSDKInstance();
+    const value = instance[prop as keyof SDKServer];
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    return value;
+  }
+}) as SDKServer;

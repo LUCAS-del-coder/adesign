@@ -1,10 +1,17 @@
 export const ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
   cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
+  // Support both DATABASE_URL and MYSQL_URL (Railway uses MYSQL_URL)
+  databaseUrl: process.env.DATABASE_URL ?? process.env.MYSQL_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Cloudflare R2 Configuration
+  cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID ?? "",
+  cloudflareBucket: process.env.CLOUDFLARE_R2_BUCKET ?? "",
+  cloudflareAccessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "",
+  cloudflareSecretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "",
+  cloudflarePublicUrl: process.env.CLOUDFLARE_R2_PUBLIC_URL ?? "", // Optional: Custom domain or R2.dev URL
+  // Google OAuth Configuration
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
 };
