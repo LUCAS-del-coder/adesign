@@ -286,68 +286,40 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (url: string, filename: string, event?: React.MouseEvent) => {
+  const handleDownload = async (imageId: number, filename: string, event?: React.MouseEvent) => {
     // 阻止事件冒泡，防止觸發預覽
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+      event.nativeEvent.stopImmediatePropagation();
     }
     
     try {
-      console.log('[Download] Starting download:', filename);
-      console.log('[Download] URL:', url);
+      console.log('[Download] Starting download:', filename, 'ID:', imageId);
       
-      // 使用 fetch 下載圖片並轉換為 blob
-      const response = await fetch(url, {
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'no-cache',
-      });
+      // 使用服務器端代理下載，避免 CORS 問題
+      const downloadUrl = `/api/download/${imageId}`;
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // 創建下載連結並觸發下載
+      // 創建隱藏的下載連結
       const a = document.createElement('a');
       a.style.display = 'none';
-      a.href = blobUrl;
+      a.href = downloadUrl;
       a.download = filename;
-      a.setAttribute('download', filename); // 確保下載屬性設置
+      a.setAttribute('download', filename);
       document.body.appendChild(a);
       
-      // 使用 setTimeout 確保 DOM 已更新
-      setTimeout(() => {
-        a.click();
-        document.body.removeChild(a);
-        
-        // 清理 blob URL
-        setTimeout(() => {
-          window.URL.revokeObjectURL(blobUrl);
-        }, 100);
-      }, 0);
+      // 觸發下載
+      a.click();
       
-      toast.success("下載成功");
+      // 清理
+      setTimeout(() => {
+        document.body.removeChild(a);
+      }, 100);
+      
+      toast.success("下載已開始");
     } catch (error) {
       console.error('[Download] Error:', error);
       toast.error(`下載失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
-      
-      // 如果下載失敗，提供備用方案：在新標籤頁打開
-      try {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        toast.info("已在新標籤頁打開圖片，請右鍵保存");
-      } catch (fallbackError) {
-        console.error('[Download] Fallback also failed:', fallbackError);
-      }
     }
   };
 
@@ -367,20 +339,33 @@ export default function Home() {
     const selectedAds = generatedAds.filter(ad => selectedImageIds.has(ad.id));
     toast.info(`開始下載 ${selectedAds.length} 張圖片...`);
 
-    // 逐一下載，每次延遲 500ms 避免瀏覽器阻止多個下載
+    // 逐一下載，每次延遲 300ms 避免瀏覽器阻止多個下載
     for (let i = 0; i < selectedAds.length; i++) {
       const ad = selectedAds[i];
       try {
-        // 創建一個虛擬事件對象用於下載
-        const virtualEvent = {
-          preventDefault: () => {},
-          stopPropagation: () => {},
-          nativeEvent: { stopImmediatePropagation: () => {} }
-        } as React.MouseEvent;
-        await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, virtualEvent);
-        // 延遲 500ms 再下載下一張
+        // 使用服務器端代理下載
+        const downloadUrl = `/api/download/${ad.id}`;
+        const filename = `generated-${ad.id}.png`;
+        
+        // 創建隱藏的下載連結
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = filename;
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        
+        // 觸發下載
+        a.click();
+        
+        // 清理
+        setTimeout(() => {
+          document.body.removeChild(a);
+        }, 100);
+        
+        // 延遲 300ms 再下載下一張
         if (i < selectedAds.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       } catch (error) {
         console.error(`[BatchDownload] Failed to download image ${ad.id}:`, error);
@@ -710,7 +695,7 @@ export default function Home() {
                                       e.preventDefault();
                                       e.stopPropagation();
                                       e.nativeEvent.stopImmediatePropagation();
-                                      await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                                      await handleDownload(ad.id, `generated-${ad.id}.png`, e);
                                     }}
                                   >
                                     <Download className="w-4 h-4 mr-1" />
@@ -872,7 +857,7 @@ export default function Home() {
                                 e.stopPropagation();
                                 // 立即阻止默認行為和冒泡
                                 e.nativeEvent.stopImmediatePropagation();
-                                await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                                await handleDownload(ad.id, `generated-${ad.id}.png`, e);
                               }}
                             >
                               <Download className="w-4 h-4 mr-1" />
