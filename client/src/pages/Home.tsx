@@ -351,7 +351,14 @@ export default function Home() {
     }
   };
 
-  const handleBatchDownload = async () => {
+  const handleBatchDownload = async (e?: React.MouseEvent) => {
+    // 阻止事件冒泡
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+    
     if (selectedImageIds.size === 0) {
       toast.error("請先選擇要下載的圖片");
       return;
@@ -364,7 +371,13 @@ export default function Home() {
     for (let i = 0; i < selectedAds.length; i++) {
       const ad = selectedAds[i];
       try {
-        await handleDownload(ad.fileUrl, `generated-${ad.id}.png`);
+        // 創建一個虛擬事件對象用於下載
+        const virtualEvent = {
+          preventDefault: () => {},
+          stopPropagation: () => {},
+          nativeEvent: { stopImmediatePropagation: () => {} }
+        } as React.MouseEvent;
+        await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, virtualEvent);
         // 延遲 500ms 再下載下一張
         if (i < selectedAds.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -730,7 +743,12 @@ export default function Home() {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={handleBatchDownload}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.nativeEvent.stopImmediatePropagation();
+                        handleBatchDownload(e);
+                      }}
                     >
                       <Download className="w-4 h-4 mr-1" />
                       批量下載
@@ -802,17 +820,25 @@ export default function Home() {
                             src={ad.fileUrl}
                             alt="Generated"
                             className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
-                            onClick={() => {
-                              const index = generatedAds.findIndex(a => a.id === ad.id);
-                              setPreviewIndex(index);
-                              setPreviewImage(ad.fileUrl);
+                            onClick={(e) => {
+                              // 只有當點擊的不是按鈕時才觸發預覽
+                              const target = e.target as HTMLElement;
+                              if (!target.closest('button') && !target.closest('input')) {
+                                const index = generatedAds.findIndex(a => a.id === ad.id);
+                                setPreviewIndex(index);
+                                setPreviewImage(ad.fileUrl);
+                              }
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3">
+                          <div 
+                            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center gap-2 p-3"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Button
                               size="sm"
                               variant="secondary"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 const index = generatedAds.findIndex(a => a.id === ad.id);
                                 setPreviewIndex(index);
@@ -825,10 +851,12 @@ export default function Home() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              onClick={(e) => {
+                              onClick={async (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                                // 立即阻止默認行為和冒泡
+                                e.nativeEvent.stopImmediatePropagation();
+                                await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
                               }}
                             >
                               <Download className="w-4 h-4 mr-1" />
@@ -838,7 +866,9 @@ export default function Home() {
                               size="sm"
                               variant="destructive"
                               onClick={(e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
                                 if (confirm("確定要刪除此圖片嗎？此操作無法復原。")) {
                                   deleteImageMutation.mutate({ id: ad.id });
                                 }
