@@ -384,13 +384,13 @@ export async function generateImageWithGemini(
     console.log("[Gemini] 參考圖片數量:", referenceImages.length, "成功下載:", successfulReferenceCount);
     console.log("[Gemini] 請求 parts 數量:", parts.length);
 
-    // 構建請求體，包含圖片生成配置
+    // 構建請求體
+    // 注意：Gemini API 的 generationConfig 不支持 aspectRatio 和 imageSize
+    // 這些要求需要在 prompt 中明確指定
     const requestBody: any = {
       contents: [{ parts }],
-      generationConfig: {
-        aspectRatio: aspectRatio, // 強制 1:1 正方形
-        imageSize: imageSize, // 圖片尺寸
-      },
+      // generationConfig 只支持文字生成的參數，不支持圖片生成的參數
+      // aspectRatio 和 imageSize 需要在 prompt 中指定
     };
 
     // ✅ 只記錄請求體結構，不記錄完整的 base64 數據（避免日誌過大）
@@ -660,6 +660,12 @@ export async function generateAdVariants(
         {
           similarity: 40,
           instruction: `=== VARIATION ${i + 1}: 40% SIMILARITY - STRICT REQUIREMENTS ===
+
+🎯 CRITICAL IMAGE FORMAT REQUIREMENTS:
+- The image MUST be a perfect SQUARE (1:1 aspect ratio)
+- Width and height MUST be exactly equal
+- Image size: 2048x2048 pixels (2K resolution)
+- Format: PNG with high quality
 
 🎯 MANDATORY SIMILARITY LEVEL: This image must be 40% SIMILAR and 60% DIFFERENT from the original. You MUST make MAJOR creative changes.
 
