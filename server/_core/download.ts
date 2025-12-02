@@ -11,9 +11,12 @@ export function registerDownloadRoutes(app: Express) {
   // Download single image by ID
   app.get("/api/download/:id", async (req: Request, res: Response) => {
     try {
-      // Authenticate user
-      const user = await authenticateRequest(req);
-      if (!user) {
+      // Authenticate user (throws error if not authenticated)
+      let user;
+      try {
+        user = await authenticateRequest(req);
+      } catch (authError) {
+        console.error("[Download] Authentication failed:", authError);
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
@@ -59,9 +62,12 @@ export function registerDownloadRoutes(app: Express) {
   // Download multiple images (batch download)
   app.post("/api/download/batch", async (req: Request, res: Response) => {
     try {
-      // Authenticate user
-      const user = await authenticateRequest(req);
-      if (!user) {
+      // Authenticate user (throws error if not authenticated)
+      let user;
+      try {
+        user = await authenticateRequest(req);
+      } catch (authError) {
+        console.error("[Download] Authentication failed:", authError);
         res.status(401).json({ error: "Unauthorized" });
         return;
       }
