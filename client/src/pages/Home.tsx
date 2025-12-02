@@ -403,7 +403,7 @@ export default function Home() {
               <Sparkles className="w-10 h-10 text-primary" />
             </div>
             <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              廣告圖生成工具
+              adesign
             </CardTitle>
             <CardDescription className="text-base">
               使用 AI 技術，快速生成高效廣告圖變體
@@ -439,7 +439,7 @@ export default function Home() {
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-              廣告圖生成工具
+              adesign
             </h1>
           </div>
           <div className="flex items-center gap-4">
