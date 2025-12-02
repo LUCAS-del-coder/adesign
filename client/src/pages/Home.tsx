@@ -1083,8 +1083,9 @@ export default function Home() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
                   const ad = generatedAds[previewIndex];
-                  if (ad) handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                  if (ad) handleDownload(ad.id, `generated-${ad.id}.png`, e);
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
