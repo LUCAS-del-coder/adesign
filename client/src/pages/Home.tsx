@@ -404,47 +404,47 @@ export default function Home() {
             WebkitMaskImage: 'radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent)'
           }}></div>
           
-          {/* 動態發光球體 */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-violet-500 via-fuchsia-500 to-rose-500 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
+          {/* 動態發光球體 - 深藍色系 */}
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-700 rounded-full blur-3xl opacity-30 animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 rounded-full blur-3xl opacity-30 animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-blue-700 via-cyan-600 to-blue-800 rounded-full blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '2s' }}></div>
           
           {/* 掃描線效果 */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent h-full" style={{
-            background: 'linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.1) 50%, transparent 100%)',
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-full" style={{
+            background: 'linear-gradient(180deg, transparent 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%)',
             animation: 'scan 8s linear infinite'
           }}></div>
         </div>
 
         {/* 玻璃態卡片 */}
-        <Card className="w-full max-w-md mx-4 relative z-10 border border-indigo-500/30 shadow-2xl backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent">
+        <Card className="w-full max-w-md mx-4 relative z-10 border border-blue-500/30 shadow-2xl backdrop-blur-xl bg-gradient-to-br from-white/10 via-white/5 to-transparent">
           {/* 卡片發光邊框 */}
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 opacity-50 blur-xl -z-10"></div>
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/20 via-cyan-500/20 to-blue-600/20 opacity-50 blur-xl -z-10"></div>
           <div className="absolute inset-[1px] rounded-lg bg-[#0a0a0f] -z-10"></div>
           
           <CardHeader className="text-center space-y-6 pt-8 pb-6">
             {/* Logo 容器 - 帶發光效果 */}
             <div className="mx-auto mb-2 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-60 animate-pulse"></div>
-              <div className="relative w-24 h-24 bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-pink-500/30 rounded-2xl flex items-center justify-center border border-indigo-400/50 shadow-[0_0_30px_rgba(99,102,241,0.5)] backdrop-blur-sm">
-                <Sparkles className="w-12 h-12 text-indigo-300 drop-shadow-[0_0_10px_rgba(99,102,241,0.8)]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 rounded-2xl blur-xl opacity-60 animate-pulse"></div>
+              <div className="relative w-24 h-24 bg-gradient-to-br from-blue-500/30 via-cyan-500/30 to-blue-600/30 rounded-2xl flex items-center justify-center border border-blue-400/50 shadow-[0_0_30px_rgba(59,130,246,0.5)] backdrop-blur-sm">
+                <Sparkles className="w-12 h-12 text-blue-300 drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
               </div>
             </div>
             
             {/* 標題 - 霓虹燈效果 */}
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]">
+            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
               adesign
             </CardTitle>
             
             {/* 副標題 */}
             <CardDescription className="text-base text-gray-300/80">
-              使用 AI 技術，快速生成高效廣告圖變體
+              AI-Powered Ad Design
             </CardDescription>
           </CardHeader>
           
           <CardContent className="space-y-6 pb-8 px-8">
             <Button 
-              className="w-full h-14 text-lg font-semibold relative overflow-hidden group shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] transition-all duration-300 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:via-purple-500 hover:to-pink-500 border border-indigo-400/50" 
+              className="w-full h-14 text-lg font-semibold relative overflow-hidden group shadow-[0_0_30px_rgba(59,130,246,0.4)] hover:shadow-[0_0_40px_rgba(59,130,246,0.6)] transition-all duration-300 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 hover:from-blue-500 hover:via-cyan-500 hover:to-blue-600 border border-blue-400/50" 
               size="lg"
               onClick={() => window.location.href = getLoginUrl()}
             >
@@ -465,7 +465,7 @@ export default function Home() {
         </Card>
         
         {/* 底部裝飾線 */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
       </div>
     );
   }
