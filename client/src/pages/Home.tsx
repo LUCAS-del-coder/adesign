@@ -396,8 +396,8 @@ export default function Home() {
           {/* 漸變網格背景 */}
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: `
-              linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px)
+              linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
             `,
             backgroundSize: '50px 50px',
             maskImage: 'radial-gradient(ellipse 80% 50% at 50% 0%, black 40%, transparent)',
