@@ -300,6 +300,24 @@ export default function Home() {
       // 使用服務器端代理下載，避免 CORS 問題
       const downloadUrl = `/api/download/${imageId}`;
       
+      // 先檢查 URL 是否可訪問
+      const response = await fetch(downloadUrl, {
+        method: 'HEAD',
+        credentials: 'include', // 包含 cookies
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          toast.error("請先登入");
+          return;
+        }
+        if (response.status === 404) {
+          toast.error("圖片不存在");
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       // 創建隱藏的下載連結
       const a = document.createElement('a');
       a.style.display = 'none';
