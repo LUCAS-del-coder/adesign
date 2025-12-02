@@ -384,9 +384,13 @@ export async function generateImageWithGemini(
     console.log("[Gemini] 參考圖片數量:", referenceImages.length, "成功下載:", successfulReferenceCount);
     console.log("[Gemini] 請求 parts 數量:", parts.length);
 
-    // 構建請求體
+    // 構建請求體，包含圖片生成配置
     const requestBody: any = {
       contents: [{ parts }],
+      generationConfig: {
+        aspectRatio: aspectRatio, // 強制 1:1 正方形
+        imageSize: imageSize, // 圖片尺寸
+      },
     };
 
     // ✅ 只記錄請求體結構，不記錄完整的 base64 數據（避免日誌過大）
