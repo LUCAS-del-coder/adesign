@@ -680,21 +680,37 @@ export default function Home() {
                           <p className="text-sm font-medium">已生成 {selectedGeneratedAds.length} 張變體：</p>
                           <div className="grid grid-cols-3 gap-3">
                             {selectedGeneratedAds.map((ad) => (
-                              <div key={ad.id} className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg">
+                              <div 
+                                key={ad.id} 
+                                className="relative aspect-square rounded-xl overflow-hidden border border-border/50 group hover:border-primary/50 transition-all hover:shadow-lg"
+                                onClick={(e) => {
+                                  // 只有當點擊的不是按鈕時才觸發預覽
+                                  const target = e.target as HTMLElement;
+                                  if (!target.closest('button')) {
+                                    const index = selectedGeneratedAds.findIndex(a => a.id === ad.id);
+                                    setPreviewIndex(index);
+                                    setPreviewImage(ad.fileUrl);
+                                  }
+                                }}
+                              >
                                 <img
                                   src={ad.fileUrl}
                                   alt="Generated"
                                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-3">
+                                <div 
+                                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-3"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <Button
                                     size="sm"
                                     variant="default"
                                     className="shadow-md"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
+                                      e.nativeEvent.stopImmediatePropagation();
+                                      await handleDownload(ad.fileUrl, `generated-${ad.id}.png`, e);
                                     }}
                                   >
                                     <Download className="w-4 h-4 mr-1" />
