@@ -835,12 +835,14 @@ If the similarity level is wrong, adjust your changes to match the requirement E
 === END OF REQUIREMENTS ===
 
 Generate a professional, polished advertisement image that:
-1. Follows the EXACT ${similarityConfig.similarity}% similarity requirement (CRITICAL)
-2. Contains ONLY English text (ZERO non-English characters) (CRITICAL)
-3. Uses the exact English texts from the mandatory list (if provided)
-4. Maintains high quality and professional appearance
+1. Is a PERFECT SQUARE (1:1 aspect ratio, width equals height, 2048x2048 pixels) - CRITICAL FORMAT REQUIREMENT
+2. Follows the EXACT ${similarityConfig.similarity}% similarity requirement (CRITICAL)
+3. Contains ONLY English text (ZERO non-English characters) (CRITICAL)
+4. Uses the exact English texts from the mandatory list (if provided)
+5. Maintains high quality and professional appearance
 
 Remember: The image is UNUSABLE if:
+- It is NOT a perfect square (1:1 aspect ratio)
 - It contains ANY non-English text
 - The similarity level does not match ${similarityConfig.similarity}% EXACTLY
 - It does not follow the variation requirements above`;
